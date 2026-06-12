@@ -96,12 +96,11 @@
                 <th>Username</th>
                 <th>Email</th>
                 <th>Contact</th>
-                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr><td colspan="6" style="text-align:center;color:#666">Loading staff accounts...</td></tr>
+              <tr><td colspan="5" style="text-align:center;color:#666">Loading staff accounts...</td></tr>
             </tbody>
           </table>
         </div>
@@ -236,7 +235,7 @@
         const body = await res.json();
         const staff = body.data || [];
         if (staff.length === 0) {
-          document.querySelector('#staffTable tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#666">No staff accounts yet.</td></tr>';
+          document.querySelector('#staffTable tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#666">No staff accounts yet.</td></tr>';
           return;
         }
         const rows = staff.map(s => `
@@ -245,7 +244,6 @@
             <td>${s.username || '-'}</td>
             <td>${s.email || '-'}</td>
             <td>${s.contact || '-'}</td>
-            <td class="status-cell"><span class="status-indicator ${s.is_online ? 'status-online' : 'status-offline'}"></span><span class="status-label">${s.is_online ? 'Live' : 'Offline'}</span></td>
             <td>
               <button class="btn btn-change-pw" data-id="${s.id}" data-email="${s.email}">Change Password</button>
               <button class="btn btn-delete" data-id="${s.id}" data-name="${s.fullname}">Delete</button>
@@ -273,7 +271,7 @@
         });
       } catch (err) {
         console.error('Load staff error', err);
-        document.querySelector('#staffTable tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#c9302c">Network error.</td></tr>';
+        document.querySelector('#staffTable tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#c9302c">Network error.</td></tr>';
       }
     }
 
