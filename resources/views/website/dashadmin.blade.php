@@ -233,11 +233,11 @@
           },
           credentials: 'same-origin'
         });
-        if (!res.ok) {
-          const errorText = await res.text().catch(() => 'Unknown error');
-          console.error('Failed to load officers. Status:', res.status, 'Response:', errorText);
-          document.querySelector('#staffTable tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#c9302c">Failed to load staff accounts. (Error ' + res.status + ')</td></tr>';
-          return;
+       if (!res.ok) {
+         const errorText = await res.text().catch(() => 'Unknown error');
+         console.error('Failed to load officers. Status:', res.status, 'Response:', errorText);
+         document.querySelector('#staffTable tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#c9302c">Failed to load staff accounts. (Error ' + res.status + ')</td></tr>';
+        return;
         }
         const body = await res.json();
         const staff = body.data || [];
