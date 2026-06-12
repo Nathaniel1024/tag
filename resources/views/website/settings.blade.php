@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Settings - DIGIBARANGAY</title>
+  <link rel="icon" type="image/png" href="{{ asset('img/logo_zed.png') }}" />
  <link rel="stylesheet" href="{{asset('css/styles.css')}}" />
 </head>
 <body class="admin-dashboard">
@@ -19,9 +20,9 @@
         </div>
       </div>
       <nav class="adm-nav" aria-label="Admin navigation">
-        <a href="./dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
-        <a href="./certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
-        <a href="./resident"><span class="ico">👥</span><span>Residents record</span></a>
+        <a href="/dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
+        <a href="/certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
+        <a href="/resident"><span class="ico">👥</span><span>Residents record</span></a>
         <a class="active" href="./settings"><span class="ico">⚙️</span><span>Setting</span></a>
       </nav>
       <div class="adm-sidebar-footer">

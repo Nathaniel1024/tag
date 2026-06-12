@@ -8,6 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>High Admin Dashboard</title>
+  <link rel="icon" type="image/png" href="{{ asset('img/logo_zed.png') }}" />
   <link rel="stylesheet" href="./styles.css" />
   <style>
     body{margin:0;background:#f5f5f5}
@@ -43,6 +44,7 @@
     .status-online{background:#28a745}
     .status-offline{background:#dc3545}
     .status-cell{text-align:center}
+    .status-label{font-size:13px;color:#374151;margin-left:8px;vertical-align:middle}
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:1000}
     .modal-overlay.show{display:flex}
     .modal-box{background:#fff;width:min(92vw,420px);border-radius:10px;box-shadow:0 12px 28px rgba(0,0,0,0.25);padding:20px 18px;text-align:center}
@@ -64,8 +66,12 @@
       </div>
 
       <nav class="nav">
-        <a href="/dash" class="active" style="color:#fff"><span>🏠</span><span>Dashboard</span></a>
-        <a href="/barangay" style="color:#fff"><span>👤</span><span>official Account</span></a>
+        <a href="/dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
+        <a href="/certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
+        <a href="/resident"><span class="ico">👥</span><span>Residents record</span></a>
+        <a href="/rest-acc"><span class="ico">🔐</span><span>Resident Accounts</span></a>
+        <a class="active" href="/dashboard"><span class="ico">🧭</span><span>Admin Dashboard</span></a>
+        <a href="/barangay"><span class="ico">👤</span><span>Barangay Official</span></a>
       </nav>
 
       <button class="logout-btn" id="logoutBtn">
@@ -239,7 +245,7 @@
             <td>${s.username || '-'}</td>
             <td>${s.email || '-'}</td>
             <td>${s.contact || '-'}</td>
-            <td class="status-cell"><span class="status-indicator ${s.is_online ? 'status-online' : 'status-offline'}"></span></td>
+            <td class="status-cell"><span class="status-indicator ${s.is_online ? 'status-online' : 'status-offline'}"></span><span class="status-label">${s.is_online ? 'Live' : 'Offline'}</span></td>
             <td>
               <button class="btn btn-change-pw" data-id="${s.id}" data-email="${s.email}">Change Password</button>
               <button class="btn btn-delete" data-id="${s.id}" data-name="${s.fullname}">Delete</button>
@@ -271,8 +277,9 @@
       }
     }
 
-    // Load on page load
+    // Load on page load and refresh periodically for live status
     loadStaff();
+    setInterval(loadStaff, 15000);
 
     // Logout handler
     document.getElementById('logoutBtn').addEventListener('click', async () => {

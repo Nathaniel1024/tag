@@ -16,6 +16,7 @@ Route::post('/officers/register', [OfficerController::class, 'register']);
 
 Route::middleware(['web'])->group(function () {
     Route::delete('/officers/{id}', [OfficerController::class, 'destroy']);
+    Route::post('/officers/update-last-seen', [OfficerController::class, 'updateLastSeen']);
     Route::put('/officers/{id}/password', [OfficerController::class, 'updatePassword']);
 });
 

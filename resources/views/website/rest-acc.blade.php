@@ -8,6 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Acc Resident - DIGIBARANGAY</title>
+  <link rel="icon" type="image/png" href="{{ asset('img/logo_zed.png') }}" />
   <link rel="stylesheet" href="{{ asset('css/styles.css') }}" />
   <style>
     .admin-dashboard {
@@ -85,11 +86,16 @@
         </div>
       </div>
 
+      @php($isAdmin = session('admin_role') === 'admin')
       <nav class="adm-nav" id="admSidebarNav" aria-label="Admin navigation">
-        <a href="./dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
-        <a href="./certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
-        <a href="./resident"><span class="ico">👥</span><span>Residents record</span></a>
-        <a class="active" href="./rest-acc"><span class="ico">🔐</span><span>Acc Resident</span></a>
+        <a href="/dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
+        <a href="/certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
+        <a href="/resident"><span class="ico">👥</span><span>Residents record</span></a>
+        <a class="active" href="/rest-acc"><span class="ico">🔐</span><span>Resident Accounts</span></a>
+        @if ($isAdmin)
+          <a href="/dashboard"><span class="ico">🧭</span><span>Admin Dashboard</span></a>
+          <a href="/barangay"><span class="ico">👤</span><span>Barangay Official</span></a>
+        @endif
       </nav>
 
       <div class="adm-sidebar-footer">
@@ -106,7 +112,7 @@
         </button>
         <div class="role">
           <strong>{{ session('admin_name', 'CHAIRMAN') }}</strong>
-          <span>barangay admin</span>
+          <span>{{ $isAdmin ? 'barangay admin' : 'barangay official' }}</span>
         </div>
       </header>
 

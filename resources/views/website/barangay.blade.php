@@ -8,6 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>High Admin - Create Official</title>
+  <link rel="icon" type="image/png" href="{{ asset('img/logo_zed.png') }}" />
   <link rel="stylesheet" href="./styles.css" />
   <style>
     body{margin:0;background:#f5f5f5}
@@ -79,8 +80,12 @@
       </div>
 
       <nav class="nav">
-        <a href="/dash" style="color:#fff"><span>🏠</span><span>Dashboard</span></a>
-        <a href="/barangay" class="active" style="color:#fff"><span>👤</span><span>official Account</span></a>
+        <a href="/dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
+        <a href="/certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
+        <a href="/resident"><span class="ico">👥</span><span>Residents record</span></a>
+        <a href="/rest-acc"><span class="ico">🔐</span><span>Resident Accounts</span></a>
+        <a href="/dashboard"><span class="ico">🧭</span><span>Admin Dashboard</span></a>
+        <a class="active" href="/barangay"><span class="ico">👤</span><span>Barangay Official</span></a>
       </nav>
 
       <button class="logout-btn" id="logoutBtn" type="button">
@@ -213,7 +218,7 @@
           msgSuccess.style.display = 'block';
           f.reset();
           setTimeout(() => {
-            window.location.href = '/dash';
+            window.location.href = '/dashs';
           }, 1500);
         } else {
           let errMsg = body.message || body.error || 'Failed to create account.';

@@ -8,6 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Barangay Admin - DIGIBARANGAY</title>
+  <link rel="icon" type="image/png" href="{{ asset('img/logo_zed.png') }}" />
  <link rel="stylesheet" href="{{asset('css/styles.css')}}" />
  <style>
   .admin-dashboard {
@@ -33,6 +34,16 @@
     position: relative;
     z-index: 1;
   }
+  .btn-mini.print {
+    background:#16a34a;
+    color:#fff;
+    border:0;
+    padding:.28rem .5rem;
+    border-radius:6px;
+  }
+  .btn-mini.print:hover {
+    background:#15803d;
+  }
  </style>
 </head>
 <body class="admin-dashboard">
@@ -47,11 +58,16 @@
         </div>
       </div>
 
+      @php($isAdmin = session('admin_role') === 'admin')
       <nav class="adm-nav" id="admSidebarNav" aria-label="Admin navigation">
-        <a class="active" href="./dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
-        <a href="./certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
-        <a href="./resident"><span class="ico">👥</span><span>Residents record</span></a>
-        <a href="./rest-acc"><span class="ico">🔐</span><span>Acc Resident</span></a>
+        <a class="active" href="/dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
+        <a href="/certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
+        <a href="/resident"><span class="ico">👥</span><span>Residents record</span></a>
+        <a href="/rest-acc"><span class="ico">🔐</span><span>Resident Accounts</span></a>
+        @if ($isAdmin)
+          <a href="/dashboard"><span class="ico">🧭</span><span>Admin Dashboard</span></a>
+          <a href="/barangay"><span class="ico">👤</span><span>Barangay Official</span></a>
+        @endif
       </nav>
 
       <div class="adm-sidebar-footer">
@@ -68,7 +84,7 @@
         </button>
         <div class="role">
           <strong id="topbarUserName">{{ session('admin_name', 'CHAIRMAN') }}</strong>
-          <span>barangay admin</span>
+          <span>{{ $isAdmin ? 'barangay Admin' : 'barangay Official' }}</span>
         </div>
         <div class="top-icons">
           <div style="position:relative;display:inline-block;">
@@ -194,6 +210,16 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <!-- Email Success Modal -->
+<div id="emailLoadingModal" class="modal-overlay" hidden>
+  <div class="modal" style="max-width:340px;">
+    <div class="modal-body" style="text-align:center;padding:28px 24px 30px;">
+      <img src="{{ asset('img/logo_zed.png') }}" alt="Loading logo" style="width:72px;height:72px;object-fit:contain;display:block;margin:0 auto 14px;animation:pulse 1.1s ease-in-out infinite;" />
+      <div style="font-size:18px;font-weight:700;color:#111827;margin-bottom:8px;">Sending email...</div>
+      <div style="font-size:13px;color:#6b7280;">Please wait while we prepare your PDF and message.</div>
+    </div>
+  </div>
+</div>
+
 <div id="emailSuccessModal" class="modal-overlay" hidden>
   <div class="modal" style="max-width:400px;">
     <button class="modal-close" id="emailSuccessClose">✕</button>
@@ -326,6 +352,47 @@
       }
     }
 
+    function formatCertificateIssueDate(rawDate) {
+      const value = String(rawDate || '').trim();
+      const ordinalSuffix = (dayNumber) => {
+        const remainder10 = dayNumber % 10;
+        const remainder100 = dayNumber % 100;
+        if (remainder10 === 1 && remainder100 !== 11) return 'st';
+        if (remainder10 === 2 && remainder100 !== 12) return 'nd';
+        if (remainder10 === 3 && remainder100 !== 13) return 'rd';
+        return 'th';
+      };
+
+      if (!value) return '';
+
+      const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      const slashMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      let day;
+      let monthIndex;
+      let year;
+
+      if (isoMatch) {
+        year = Number(isoMatch[1]);
+        monthIndex = Number(isoMatch[2]) - 1;
+        day = Number(isoMatch[3]);
+      } else if (slashMatch) {
+        monthIndex = Number(slashMatch[1]) - 1;
+        day = Number(slashMatch[2]);
+        year = Number(slashMatch[3]);
+      } else {
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+          return value;
+        }
+        day = parsed.getDate();
+        monthIndex = parsed.getMonth();
+        year = parsed.getFullYear();
+      }
+
+      const month = new Date(year, monthIndex, day).toLocaleString('en-US', { month: 'long' });
+      return `${day}${ordinalSuffix(day)} day of ${month}, ${year}`;
+    }
+
     function buildCertificatePdfPayload(req) {
       return {
         ref: String(req?.ref || '').trim(),
@@ -333,7 +400,7 @@
         age: req?.age ?? '',
         address: String(req?.address || '').trim(),
         purpose: String(req?.purpose || req?.purposeReason || '').trim(),
-        date: String(req?.dateRequested || req?.date || '').trim(),
+        date: formatCertificateIssueDate(req?.dateRequested || req?.date || ''),
       };
     }
 
@@ -667,6 +734,7 @@
     const deleteCancelBtn = document.getElementById('deleteCancelBtn');
     const notifBellBtn = document.getElementById('notifBellBtn');
     const notifPanel = document.getElementById('notifPanel');
+    const emailLoadingModal = document.getElementById('emailLoadingModal');
     let selectedEmailRef = null;
     let selectedDeleteRef = null;
     let knownRefSet = new Set();
@@ -699,6 +767,18 @@
       deleteModal.hidden = true;
     }
 
+    function showEmailLoadingModal() {
+      if (!emailLoadingModal) return;
+      emailLoadingModal.hidden = false;
+      emailLoadingModal.classList.add('open');
+    }
+
+    function closeEmailLoadingModal() {
+      if (!emailLoadingModal) return;
+      emailLoadingModal.classList.remove('open');
+      emailLoadingModal.hidden = true;
+    }
+
     async function sendRequestByEmail(ref, overrideEmail) {
       const req = getRequestByRef(ref);
       if (!req) {
@@ -713,6 +793,7 @@
       }
 
       persistRequestEmail(ref, recipient);
+      showEmailLoadingModal();
 
       let pdfAttachmentBase64 = '';
       if (window.html2canvas && window.jspdf && window.jspdf.jsPDF) {
@@ -768,10 +849,12 @@
           throw new Error(data.message || 'Unable to send email.');
         }
 
+        closeEmailLoadingModal();
         closeEmailModal();
         showEmailSuccessModal();
       } catch (error) {
         console.error('Email send error:', error);
+        closeEmailLoadingModal();
         alert(error.message || 'Unable to send email.');
       }
     }
@@ -898,11 +981,12 @@
             + '<button class="btn-mini edit" data-action="edit" data-ref="' + ref + '">Edit</button> '
             + '<button class="btn-mini approve" data-action="approve" data-ref="' + ref + '">Approve</button> '
             + '<button class="btn-mini reject" data-action="reject" data-ref="' + ref + '">Reject</button> '
+            + '<button class="btn-mini print" data-action="print" data-ref="' + ref + '">Print</button> '
             + '<button class="btn-mini delete" data-action="delete" data-ref="' + ref + '">Delete</button>'
           : '<button class="btn-mini view" data-action="view" data-ref="' + ref + '">View</button> '
             + '<button class="btn-mini edit" data-action="edit" data-ref="' + ref + '">Edit</button> '
             + '<button class="btn-mini email" data-action="send-email" data-ref="' + ref + '">Send Email</button> '
-            + '<button class="btn-mini cert" data-action="cert" data-ref="' + ref + '">Cert</button> '
+            + '<button class="btn-mini print" data-action="print" data-ref="' + ref + '">Print</button> '
             + '<button class="btn-mini delete" data-action="delete" data-ref="' + ref + '">Delete</button>';
 
         return '<tr>'
@@ -941,7 +1025,7 @@
         age: String(req.age ?? '').trim(),
         address: String(req.address || '').trim(),
         purpose: String(req.purposeReason || req.purpose || '').trim(),
-        date: String(req.dateRequested || req.date || '').trim(),
+        date: formatCertificateIssueDate(req.dateRequested || req.date || ''),
         ref: String(req.ref || '').trim(),
       };
 
@@ -962,6 +1046,116 @@
       }
 
       window.location.href = '/certificate?t=' + Date.now();
+    }
+
+    async function printCertificateForRef(ref) {
+      const all = loadRequests();
+      const req = all.find(r => String(r.ref) === String(ref));
+      if (!req) {
+        alert('Request not found.');
+        return;
+      }
+
+      const payload = {
+        name: String(req.name || '').trim(),
+        age: String(req.age ?? '').trim(),
+        address: String(req.address || '').trim(),
+        purpose: String(req.purposeReason || req.purpose || '').trim(),
+        date: formatCertificateIssueDate(req.dateRequested || req.date || ''),
+        ref: String(req.ref || '').trim(),
+      };
+
+      try {
+        sessionStorage.setItem(CERT_AUTOFILL_KEY, JSON.stringify(payload));
+        if (req && req.savedTemplate && typeof req.savedTemplate === 'object') {
+          sessionStorage.setItem(TEMPLATE_OVERRIDE_KEY, JSON.stringify(req.savedTemplate));
+        } else {
+          const globalTemplate = readGlobalClearanceTemplate();
+          if (globalTemplate && typeof globalTemplate === 'object') {
+            sessionStorage.setItem(TEMPLATE_OVERRIDE_KEY, JSON.stringify(globalTemplate));
+          } else {
+            sessionStorage.removeItem(TEMPLATE_OVERRIDE_KEY);
+          }
+        }
+      } catch (err) {
+        console.warn('Unable to set certificate payload for printing', err);
+      }
+
+      // Prefer generating a full A4 PDF blob so the opened tab directly shows
+      // the PDF (ideal for Save as PDF) — fallback to printable page when
+      // generation isn't possible.
+      if (window.html2canvas && window.jspdf && window.jspdf.jsPDF && typeof generateRequestCertificatePdfBase64 === 'function') {
+        try {
+          const base64 = await generateRequestCertificatePdfBase64(req);
+          if (base64) {
+            const binary = atob(base64);
+            const len = binary.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+            const blob = new Blob([bytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const win = window.open(url, '_blank');
+            if (!win) {
+              alert('Popup blocked. Please allow popups for this site to print or save PDF.');
+              URL.revokeObjectURL(url);
+              return;
+            }
+
+            // Poll until the new window has loaded its document, then call print.
+            const pollPdf = setInterval(() => {
+              try {
+                if (!win || win.closed) { clearInterval(pollPdf); URL.revokeObjectURL(url); return; }
+                // Some browsers expose a usable document even for blob PDFs.
+                const doc = win.document;
+                if (doc && (doc.readyState === 'complete' || doc.body)) {
+                  clearInterval(pollPdf);
+                  try {
+                    win.focus();
+                    try { win.onafterprint = function() { try { win.close(); } catch (_) {} }; } catch (_) {}
+                    win.print();
+                  } catch (e) {
+                    console.warn('Print failed for generated PDF:', e);
+                  }
+                  // revoke after a short delay to let the browser finish using it
+                  setTimeout(() => URL.revokeObjectURL(url), 10000);
+                }
+              } catch (e) {
+                // cross-origin or not ready yet; ignore
+              }
+            }, 300);
+            return;
+          }
+        } catch (err) {
+          console.warn('PDF generation failed, falling back to printable page:', err);
+        }
+      }
+
+      // Fallback: open printable certificate page and call window.print()
+      const win = window.open('/certificate?mode=print&t=' + Date.now(), '_blank');
+      if (!win) {
+        alert('Popup blocked. Please allow popups for this site to print.');
+        return;
+      }
+
+      const poll = setInterval(() => {
+        try {
+          if (!win || win.closed) { clearInterval(poll); return; }
+          const doc = win.document;
+          const ready = doc && (doc.readyState === 'complete' || doc.getElementById('paper'));
+          if (ready) {
+            clearInterval(poll);
+            try {
+              win.focus();
+              try { win.onafterprint = function() { try { win.close(); } catch (_) {} }; } catch (_) {}
+              win.print();
+            } catch (e) {
+              console.warn('Print call failed:', e);
+            }
+          }
+        } catch (e) {
+          // cross-origin or not ready yet; ignore and keep polling
+        }
+      }, 300);
     }
 
     const requests = loadRequests();
@@ -1058,6 +1252,11 @@
 
       if (action === 'send-email') {
         openEmailModal(ref);
+        return;
+      }
+
+      if (action === 'print') {
+        printCertificateForRef(ref);
         return;
       }
 
