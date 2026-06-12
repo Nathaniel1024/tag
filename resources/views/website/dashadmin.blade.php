@@ -225,11 +225,18 @@
       updateLastSeen();
 
       try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         const res = await fetch('/api/officers', {
-          headers: { 'Accept': 'application/json' }
+          headers: { 
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+          },
+          credentials: 'same-origin'
         });
         if (!res.ok) {
-          document.querySelector('#staffTable tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#c9302c">Failed to load staff accounts.</td></tr>';
+          const errorText = await res.text().catch(() => 'Unknown error');
+          console.error('Failed to load officers. Status:', res.status, 'Response:', errorText);
+          document.querySelector('#staffTable tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#c9302c">Failed to load staff accounts. (Error ' + res.status + ')</td></tr>';
           return;
         }
         const body = await res.json();
