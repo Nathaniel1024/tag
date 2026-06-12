@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('barangay_officers', function (Blueprint $table) {
-            //
+            if (! Schema::hasColumn('barangay_officers', 'last_seen')) {
+                $table->timestamp('last_seen')->nullable()->after('updated_at');
+            }
         });
     }
 
@@ -22,7 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('barangay_officers', function (Blueprint $table) {
-            //
+            if (Schema::hasColumn('barangay_officers', 'last_seen')) {
+                $table->dropColumn('last_seen');
+            }
         });
     }
 };

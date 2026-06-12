@@ -8,6 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>Certificate Management - DIGIBARANGAY</title>
+    <link rel="icon" type="image/png" href="{{ asset('img/logo_zed.png') }}" />
   <link rel="stylesheet" href="{{asset('css/styles.css')}}" />
   <style>
     .paper{
@@ -30,15 +31,15 @@
       position:absolute;
       left:50%;
       top:54%;
-      width:430px;
-      height:430px;
+      width:520px;
+      height:520px;
       transform:translate(-50%, -50%);
       background-image:url('{{ asset('img/Barangay Official Logo.png') }}');
       background-repeat:no-repeat;
       background-position:center;
       background-size:contain;
-      opacity:.12;
-      filter:grayscale(100%) blur(1.8px);
+      opacity:.17;
+      filter:grayscale(92%) blur(.7px);
       pointer-events:none;
       z-index:1;
     }
@@ -76,7 +77,7 @@
     }
 
     .paper .cert-header-text{
-      font-size:12px;
+      font-size:14px;
       line-height:1.3;
       margin:5px 0;
     }
@@ -93,17 +94,20 @@
 
     .paper .cert-header-image{
       display:block;
-      width:100%;
-      max-width:750px;
-      margin:0 auto;
-      height:170%;
+      display:block;
+      /* slightly larger header image while preserving sharpness */
+      width: calc(100% + 180px);
+      max-width: none;
+      margin: 0 -90px 20px; /* overflow horizontally to enlarge visual */
+      height: auto;
+      max-height:430px;
       object-fit:contain;
     }
 
     .paper .type-only-header{
       margin:8px 0 4px;
       text-align:center;
-      font-size:27px;
+      font-size:40px;
       font-weight:700;
       letter-spacing:.22em;
       text-transform:uppercase;
@@ -117,7 +121,7 @@
 
     .paper h3{
       margin:14px 0 12px;
-      font-size:30px;
+      font-size:38px;
       font-weight:700;
       letter-spacing:.28em;
       text-transform:uppercase;
@@ -178,6 +182,38 @@
       letter-spacing:.02em;
     }
 
+    body.pdf-mode .paper{
+      width:794px;
+      min-height:1123px;
+      max-width:none;
+      padding:56px 72px 92px;
+      box-shadow:none;
+      border:0;
+    }
+
+    body.pdf-mode .paper .cert-header-image-wrap{
+      margin:2px auto 36px;
+    }
+
+    body.pdf-mode .paper .body{
+      margin-top:36px;
+      line-height:1.95;
+    }
+
+    body.pdf-mode .paper .body > div{
+      margin:0 0 16px;
+    }
+
+    body.pdf-mode .paper .sig{
+      margin-top:76px;
+      margin-bottom:78px;
+    }
+
+    body.pdf-mode .paper .email-note{
+      bottom:48px;
+      max-width:46%;
+    }
+
     .paper .email-note{
       position:absolute;
       right:72px;
@@ -192,6 +228,50 @@
     .paper .seal,
     .paper .qr{
       display:none;
+    }
+
+    .paper .pdf-check {
+      display:inline-block;
+      width:0.95em;
+      height:0.95em;
+      margin-right:0.35em;
+      border:1.8px solid #111827;
+      border-radius:2px;
+      box-sizing:border-box;
+      vertical-align:middle;
+      transform:translateY(-0.06em);
+      background:#fff;
+      appearance:none;
+      -webkit-appearance:none;
+      cursor:pointer;
+      position:relative;
+    }
+
+    .paper .pdf-check::after {
+      content:'';
+      position:absolute;
+      left:0.18em;
+      top:0.03em;
+      width:0.34em;
+      height:0.62em;
+      border-right:2px solid transparent;
+      border-bottom:2px solid transparent;
+      transform:rotate(45deg) scale(0.92);
+    }
+
+    .paper .pdf-check:checked {
+      background:#111827;
+      border-color:#111827;
+    }
+
+    .paper .pdf-check:checked::after {
+      border-right-color:#fff;
+      border-bottom-color:#fff;
+    }
+
+    .paper .pdf-check:focus-visible {
+      outline:2px solid #2b77d1;
+      outline-offset:2px;
     }
 
     .preview-card{
@@ -222,6 +302,17 @@
       .paper .sig{
         margin-top:56px;
         margin-bottom:36px;
+      }
+
+      body.pdf-mode .paper{
+        width:794px;
+        min-height:1123px;
+        max-width:none;
+        padding:56px 72px 92px;
+      }
+
+      body.pdf-mode .paper .body{
+        font-size:17px;
       }
     }
 
@@ -335,21 +426,29 @@
         width:100%;
         max-width:100%;
       }
+
+      body.pdf-mode .paper{
+        width:794px;
+        min-width:794px;
+        max-width:none;
+      }
     }
   </style>
   </head>
   @php
     // PDF content with HTML markup for formatting (simulate PDF layout)
     $pdfTemplateData = [
-      ["name" => "BRGY CERTIFICATE of ONENESS.pdf", "content" => '<div style="text-align:center;font-size:2rem;font-weight:bold;text-decoration:underline;letter-spacing:0.2em;">CERTIFICATION</div><div style="margin-top:2.5em;text-align:-webkit-left;font-size:1.1rem;font-weight:bold;">TO WHOM IT MAY CONCERN:</div><div style="margin-top:2.5em;text-align:justify;font-size:1.1rem;">This is to certify that <u>______________________________</u> and <u>______________________________</u>, both of which are <u>______</u> years old and both with postal address of <u>______________________________</u> St. Bo. Obrero Tondo, Manila, is the <b>same person</b> and resident of Barangay 192.<br><br>This certification was issued upon the request of the above-mentioned name for any legal purposes that may serve him/her best.<br><br>Issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II this <u>_____</u> day of <u>_____________</u>, <u>______</u> City of Manila.</div><div style="margin-top:3.5em;text-align:right;font-weight:bold;font-size:1.1rem;"><div style="display:inline-block;text-align:center;"><div><br><span style="font-weight:normal;"></span></div></div></div><div style="position:absolute;bottom:15px;left:15px;font-size:10px;"></div>'],
-      ["name" => "BRGY CERTIFICATE with Good Moral.pdf", "content" => '<div style="text-align:center;font-size:2rem;font-weight:bold;text-decoration:underline;letter-spacing:0.2em;">CERTIFICATION</div><div style="margin-top:2.5em;text-align:-webkit-left;font-size:1.1rem;font-weight:bold;">TO WHOM IT MAY CONCERN:</div><div style="margin-top:2.5em;text-align:justify;font-size:1.1rem;">This is to certify that <u>______________________________</u>, <u>____</u> years old, <u>_________</u> is a bonafide resident of this barangay with postal address at <u>______________________________</u> St. Bo. Obrero Tondo, Manila, who is known to me as a person of <b>good moral character</b> and has <b>no derogatory record</b> as of this date.<br><br>This further certifies that the subject person mentioned above and her immediate family members/relatives are not involved in any illegal activities, not listed in <b>BADAC</b> watchlist or drug personalities and not connected nor member of any left leaning group/organizations.<br><br>This certification is being issued for whatever legal purpose it may serve.<br><br>Done and issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II this <u>____</u> day of <u>_____________</u>, <u>______</u>, City of Manila.</div><div style="margin-top:3.5em;text-align:right;font-weight:bold;font-size:1.1rem;"><div style="display:inline-block;text-align:center;"><div><br><span style="font-weight:normal;"></span></div></div></div><div style="position:absolute;bottom:15px;left:15px;font-size:10px;"></div>' ],
-      ["name" => "BRGY CERTIFICATE.pdf", "content" => '<div style="text-align:center;font-size:2rem;font-weight:bold;text-decoration:underline;letter-spacing:0.2em;">CERTIFICATION</div><div style="margin-top:2.5em;text-align:-webkit-left;font-size:1.1rem;font-weight:bold;">TO WHOM IT MAY CONCERN:</div><div style="margin-top:2.5em;text-align:justify;font-size:1.1rem;">This is to certify that <u>______________________________</u>, <u>______</u> years old, <u>_________</u>, a resident of Barangay 192 with postal address at <u>______________________________</u> St. Bo. Obrero Tondo Manila.<br><br>This certification was issued upon the request of the above-mentioned name for any legal purposes that may serve him/her best.<br><br><b>AS PER REQUIREMENT IN SUPPORT OF HIS/HER DOCUMENT:</b><br><span style="display:inline-block;width:49%">&#x2610; Employment/Work Purposes</span><span style="display:inline-block;width:49%">&#x2610; Medical Purpose</span><br><span style="display:inline-block;width:49%">&#x2610; School Requirement/Purpose</span><span style="display:inline-block;width:49%">&#x2610; Vending Permit</span><br><span style="display:inline-block;width:49%">&#x2610; Hospital Purposes</span><span style="display:inline-block;width:49%">&#x2610; Bank Transaction</span><br><span style="display:inline-block;width:49%">&#x2610; SSS/GSIS Requirement</span><span style="display:inline-block;width:49%">&#x2610; Transfer of Resident</span><br><span style="display:inline-block;width:49%">&#x2610; Senior ID and Booklet</span><span style="display:inline-block;width:49%">&#x2610; Others: ____________</span><br><br>IN WITNESS WHERE OF I have hereunto set my hand and affixed the official seal of this office.<br>Issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II this <u>___</u>th day of <u>_____________</u>, City of Manila.</div><div style="margin-top:3.5em;text-align:right;font-weight:bold;font-size:1.1rem;"><div style="display:inline-block;text-align:center;"><div><br><span style="font-weight:normal;"></span></div></div></div><div style="position:absolute;bottom:15px;left:15px;font-size:10px;"></div>' ],
-      ["name" => "BRGY INDIGENCY.pdf", "content" => '<div style="text-align:center;font-size:2rem;font-weight:bold;text-decoration:underline;letter-spacing:0.2em;">CERTIFICATION</div><div style="text-align:-webkit-left;font-size:1.2rem;font-weight:bold;">INDIGENT</div><div style="margin-top:2.5em;text-align:center;font-size:1.1rem;font-weight:bold;">TO WHOM IT MAY CONCERN:</div><div style="margin-top:2.5em;text-align:justify;font-size:1.1rem;">This is to certify that <u>______________________________</u>, <u>______</u> years old, , is a resident of Barangay 192, with postal address at Street Bo. Obrero Tondo Manila.<br><br>This further certifies that the subject person concerned is known to us that belong to the <b>INDIGENT FAMILY</b> of this Barangay. Their family have no sufficient income and barely enough to meet day to day needs.<br><br>This certification was issued upon the request of the above-mentioned person.<br><br><b>IN WITNESS WHERE OF</b> I have hereunto set my hand and affixed the official seal of this office.<br>Issued in the Office of the Barangay Chairman, Barangay 192 Zone 17 District II this <u>___</u>th day of <u>_____________</u>, City of Manila.</div><div style="margin-top:3.5em;text-align:right;font-weight:bold;font-size:1.1rem;"><div style="display:inline-block;text-align:center;"><div><br><span style="font-weight:normal;"></span></div></div></div><div style="position:absolute;bottom:15px;left:15px;font-size:10px;"></div>' ],
-      ["name" => "CERTIFICATE FOR 1ST-TIME JOB SEEKER.pdf", "content" => '<div style="text-align:center;font-size:1.1rem;font-weight:bold;">Barangay Certificate Number 2026-01.</div><div style="text-align:-webkit-left;font-size:2rem;font-weight:bold;text-decoration:underline;letter-spacing:0.2em;">CERTIFICATION</div><div style="text-align:center;font-size:1.1rem;font-weight:bold;">(FIRST TIME JOB SEEKERS ASSISTANCE ACT – RA 11261)</div><div style="margin-top:2.5em;text-align:justify;font-size:1.1rem;">This is to certify that Mr./Ms. <u>______________________________</u>, <u>______</u> years old, a resident of <u>______________________________</u> St., Bo. Obrero, Tondo Manila for <u>______</u> years, is a qualified availee of <b>RA 11261 for the First Time Job Seeker Act of 2019</b>.<br><br>I further certify that the holder/bearer was informed of his/her rights, including the duties and responsibilities accorded by <b>RA 11261</b> through the <b>OATH OF UNDERTAKING</b> he/she has signed and executed in the presence of our Barangay Officials.<br><br>Signed this <u>___</u> day of <u>_____________</u>, in Barangay 192 Zone 17 District 2 Tondo, City of Manila.<br><br>This certification is valid until <u>_____________</u>, one (1) year from the date of issuance.<br><br></b><br><div style="display:inline-block;text-align:center;margin-top:1em;"><i style="/*width:180px;*//*max-height:72px;*/display:block;/*margin:0 auto 0.2em auto;*/ text-align:end"><div><br><span style="font-weight:normal;"></span></div></div>Witnessed by:<br><div style="display:inline-block;text-align:end;margin-top:1em;">_________________________<br>(NAME)<br>(Position)</div><div style="position:absolute;bottom:15px;left:15px;font-size:10px;"></div>' ],
-      ["name" => "OATH OF UNDERTAKING - NEW.pdf", "content" => '<div style="text-align:center;font-size:2rem;font-weight:bold;text-decoration:underline;letter-spacing:0.2em;">OATH OF UNDERTAKING</div><div style="margin-top:2.5em;text-align:justify;font-size:1.1rem;">I, <u>______________________________</u>, <u>______</u> years old, is a resident of this barangay with postal address at <u>______________________________</u> Street Bo. Obrero Tondo, Manila for <u>______</u> years, availing the benefits of <b>Republic Act 11261</b>, otherwise known as the <b>First Time Jobseekers Act of 2019</b>, do hereby declare, agree and undertake to abide and be bound by the following:<br><ol style="margin-left:2em;margin-top:1em;"> <li>That this is the first time that I will actively look for a job, and therefore requesting that a Barangay Certification be issued in my favor to avail the benefits of the law;</li> <li>That I am aware that the benefit and privilege/s under the said law shall be valid only for one (1) year from the date of the Barangay Certification issued;</li> <li>That I can avail the benefits of the law only once;</li> <li>That I understand that my personal information shall be included in the Roster/List of First Time Jobseekers and will not be used for any unlawful purpose;</li> <li>That I will inform and/or report to the Barangay personally, through text or other means, or through my family/relatives once I get employed;</li> <li>That I am not a beneficiary of the JobStart Program under R.A. No. 10869 and other laws that give similar exemptions for the documents or transactions exempted R.A. No. 11261;</li> <li>That if issued the requested Certification, I will not use the same in any fraud, neither falsify nor help and/or assist in the fabrication of the said certification.</li> <li>That this undertaking is made solely for the purpose of obtaining a Barangay Certification consistent with the objective of R.A. 11261 and not for any other purposes.</li> <li>THAT I CONSENT TO THE USE OF MY PERSONAL INFORMATION PURSUANT TO THE Data Piracy Act and other applicable laws, rules and regulations.</li></ol><div style="margin-top:2em;"><div style="text-align:left;">Signed this <u>______</u> day of <u>_____________</u> at the Barangay Hall, Tondo, Manila.</div><div style="margin-top:1em;text-align:right;"><u>_____________________________</u><br>First Time Jobseeker</div>' ]
+      ["name" => "BRGY CERTIFICATE of ONENESS.pdf", "content" => '<div style="text-align:center;font-size:2rem;font-weight:bold;text-decoration:underline;letter-spacing:0.2em;">CERTIFICATION</div><div style="margin-top:2.5em;text-align:-webkit-left;font-size:1.1rem;font-weight:bold;">TO WHOM IT MAY CONCERN:</div><div style="margin-top:2.5em;text-align:justify;font-size:1.1rem;">This is to certify that <u>______________________________</u> and <u>______________________________</u>, both of which are <u>______</u> years old and both with postal address of <u>______________________________</u> St. Bo. Obrero Tondo, Manila, is the <b>same person</b> and resident of Barangay 192.<br><br>This certification was issued upon the request of the above-mentioned name for any legal purposes that may serve him/her best.<br><br>Issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II this <u>_____</u> of, City of Manila.</div><div style="margin-top:3.5em;text-align:right;font-weight:bold;font-size:1.1rem;"><div style="display:inline-block;text-align:center;"><div><br><span style="font-weight:normal;"></span></div></div></div><div style="position:absolute;bottom:15px;left:15px;font-size:10px;"></div>'],
+      ["name" => "BRGY CERTIFICATE with Good Moral.pdf", "content" => '<div style="text-align:center;font-size:2rem;font-weight:bold;text-decoration:underline;letter-spacing:0.2em;">CERTIFICATION</div><div style="margin-top:2.5em;text-align:-webkit-left;font-size:1.1rem;font-weight:bold;">TO WHOM IT MAY CONCERN:</div><div style="margin-top:2.5em;text-align:justify;font-size:1.1rem;">This is to certify that <u>______________________________</u>, <u>____</u> years old, <u>_________</u> is a bonafide resident of this barangay with postal address at <u>______________________________</u> St. Bo. Obrero Tondo, Manila, who is known to me as a person of <b>good moral character</b> and has <b>no derogatory record</b> as of this date.<br><br>This further certifies that the subject person mentioned above and her immediate family members/relatives are not involved in any illegal activities, not listed in <b>BADAC</b> watchlist or drug personalities and not connected nor member of any left leaning group/organizations.<br><br>This certification is being issued for whatever legal purpose it may serve.<br><br>Done and issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II this <u>____</u> of, City of Manila.</div><div style="margin-top:3.5em;text-align:right;font-weight:bold;font-size:1.1rem;"><div style="display:inline-block;text-align:center;"><div><br><span style="font-weight:normal;"></span></div></div></div><div style="position:absolute;bottom:15px;left:15px;font-size:10px;"></div>' ],
+      ["name" => "BRGY CERTIFICATE.pdf", "content" => '<div style="text-align:center;font-size:2rem;font-weight:bold;text-decoration:underline;letter-spacing:0.2em;">CERTIFICATION</div><div style="margin-top:2.5em;text-align:-webkit-left;font-size:1.1rem;font-weight:bold;">TO WHOM IT MAY CONCERN:</div><div style="margin-top:2.5em;text-align:justify;font-size:1.1rem;">This is to certify that <u>______________________________</u>, <u>______</u> years old, <u>_________</u>, a resident of Barangay 192 with postal address at <u>______________________________</u> St. Bo. Obrero Tondo Manila.<br><br>This certification was issued upon the request of the above-mentioned name for any legal purposes that may serve him/her best.<br><br><b>AS PER REQUIREMENT IN SUPPORT OF HIS/HER DOCUMENT:</b><br><span style="display:inline-block;width:49%">&#x2610; Employment/Work Purposes</span><span style="display:inline-block;width:49%">&#x2610; Medical Purpose</span><br><span style="display:inline-block;width:49%">&#x2610; School Requirement/Purpose</span><span style="display:inline-block;width:49%">&#x2610; Vending Permit</span><br><span style="display:inline-block;width:49%">&#x2610; Hospital Purposes</span><span style="display:inline-block;width:49%">&#x2610; Bank Transaction</span><br><span style="display:inline-block;width:49%">&#x2610; SSS/GSIS Requirement</span><span style="display:inline-block;width:49%">&#x2610; Transfer of Resident</span><br><span style="display:inline-block;width:49%">&#x2610; Senior ID and Booklet</span><span style="display:inline-block;width:49%">&#x2610; Others: ____________</span><br><br>IN WITNESS WHERE OF I have hereunto set my hand and affixed the official seal of this office.<br>Issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II this <u>___</u>th , City of Manila.</div><div style="margin-top:3.5em;text-align:right;font-weight:bold;font-size:1.1rem;"><div style="display:inline-block;text-align:center;"><div><br><span style="font-weight:normal;"></span></div></div></div><div style="position:absolute;bottom:15px;left:15px;font-size:10px;"></div>' ],
+      ["name" => "BRGY INDIGENCY.pdf", "content" => '<div style="text-align:center;font-size:2rem;font-weight:bold;text-decoration:underline;letter-spacing:0.2em;">CERTIFICATION</div><div style="text-align:-webkit-left;font-size:1.2rem;font-weight:bold;">INDIGENT</div><div style="margin-top:2.5em;text-align:center;font-size:1.1rem;font-weight:bold;">TO WHOM IT MAY CONCERN:</div><div style="margin-top:2.5em;text-align:justify;font-size:1.1rem;">This is to certify that <u>______________________________</u>, <u>______</u> years old, , is a resident of Barangay 192, with postal address at Street Bo. Obrero Tondo Manila.<br><br>This further certifies that the subject person concerned is known to us that belong to the <b>INDIGENT FAMILY</b> of this Barangay. Their family have no sufficient income and barely enough to meet day to day needs.<br><br>This certification was issued upon the request of the above-mentioned person.<br><br><b>IN WITNESS WHERE OF</b> I have hereunto set my hand and affixed the official seal of this office.<br>Issued in the Office of the Barangay Chairman, Barangay 192 Zone 17 District II this <u>___</u>th of, City of Manila.</div><div style="margin-top:3.5em;text-align:right;font-weight:bold;font-size:1.1rem;"><div style="display:inline-block;text-align:center;"><div><br><span style="font-weight:normal;"></span></div></div></div><div style="position:absolute;bottom:15px;left:15px;font-size:10px;"></div>' ],
+      ["name" => "CERTIFICATE FOR 1ST-TIME JOB SEEKER.pdf", "content" => '<div style="text-align:right;font-size:1.1rem;font-weight:bold;">Barangay Certificate Number 2026-01.</div><div style="text-align:center;font-size:2rem;font-weight:bold;text-decoration:underline;letter-spacing:0.2em;">CERTIFICATION</div><div style="text-align:center;font-size:1.1rem;font-weight:bold;">(FIRST TIME JOB SEEKERS ASSISTANCE ACT – RA 11261)</div><div style="margin-top:2.5em;text-align:justify;font-size:1.1rem;">This is to certify that Mr./Ms. <u>______________________________</u>, <u>______</u> years old, a resident of <u>______________________________</u> St., Bo. Obrero, Tondo Manila for <u>______</u> years, is a qualified availee of <b>RA 11261 for the First Time Job Seeker Act of 2019</b>.<br><br>I further certify that the holder/bearer was informed of his/her rights, including the duties and responsibilities accorded by <b>RA 11261</b> through the <b>OATH OF UNDERTAKING</b> he/she has signed and executed in the presence of our Barangay Officials.<br><br>Signed this <u>___</u>  of <u>_____________</u>, in Barangay 192 Zone 17 District 2 Tondo, City of Manila.<br><br>This certification is valid until <u>_____________</u>, one (1) year from the date of issuance.<br><br></b><br><div style="display:inline-block;text-align:center;margin-top:1em;"><i style="/*width:180px;*//*max-height:72px;*/display:block;/*margin:0 auto 0.2em auto;*/ text-align:end"><div><br><span style="font-weight:normal;"></span></div></div>Witnessed by:<br><div style="display:inline-block;text-align:end;margin-top:1em;">_________________________<br>(NAME)<br>(Position)</div><div style="position:absolute;bottom:15px;left:15px;font-size:10px;"></div>' ],
+      ["name" => "OATH OF UNDERTAKING - NEW.pdf", "content" => '<div style="text-align:center;font-size:2rem;font-weight:bold;text-decoration:underline;letter-spacing:0.2em;">OATH OF UNDERTAKING</div><div style="margin-top:2.5em;text-align:justify;font-size:1.1rem;">I, <u>______________________________</u>, <u>______</u> years old, is a resident of this barangay with postal address at <u>______________________________</u> Street Bo. Obrero Tondo, Manila for <u>______</u> years, availing the benefits of <b>Republic Act 11261</b>, otherwise known as the <b>First Time Jobseekers Act of 2019</b>, do hereby declare, agree and undertake to abide and be bound by the following:<br><ol style="margin-left:2em;margin-top:1em;"> <li>That this is the first time that I will actively look for a job, and therefore requesting that a Barangay Certification be issued in my favor to avail the benefits of the law;</li> <li>That I am aware that the benefit and privilege/s under the said law shall be valid only for one (1) year from the date of the Barangay Certification issued;</li> <li>That I can avail the benefits of the law only once;</li> <li>That I understand that my personal information shall be included in the Roster/List of First Time Jobseekers and will not be used for any unlawful purpose;</li> <li>That I will inform and/or report to the Barangay personally, through text or other means, or through my family/relatives once I get employed;</li> <li>That I am not a beneficiary of the JobStart Program under R.A. No. 10869 and other laws that give similar exemptions for the documents or transactions exempted R.A. No. 11261;</li> <li>That if issued the requested Certification, I will not use the same in any fraud, neither falsify nor help and/or assist in the fabrication of the said certification.</li> <li>That this undertaking is made solely for the purpose of obtaining a Barangay Certification consistent with the objective of R.A. 11261 and not for any other purposes.</li> <li>THAT I CONSENT TO THE USE OF MY PERSONAL INFORMATION PURSUANT TO THE Data Piracy Act and other applicable laws, rules and regulations.</li></ol><div style="margin-top:2em;"><div style="text-align:left;">Signed this <u>______</u>  of <u>_____________</u> at the Barangay Hall, Tondo, Manila.</div><div style="margin-top:1em;text-align:right;"><u>_____________________________</u><br>First Time Jobseeker</div>' ]
     ];
   @endphp
-  <body class="admin-dashboard">
+  @php($isPdfMode = request('mode') === 'docs')
+  <body class="admin-dashboard{{ $isPdfMode ? ' pdf-mode' : '' }}">
+    @php($isAdmin = session('admin_role') === 'admin')
     <div class="adm-layout">
       <button class="adm-sidebar-overlay" id="admSidebarOverlay" type="button" aria-label="Close menu"></button>
       <aside class="adm-sidebar">
@@ -361,10 +460,14 @@
           </div>
         </div>
         <nav class="adm-nav" id="admSidebarNav" aria-label="Admin navigation">
-          <a href="./dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
-          <a class="active" href="./certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
-          <a href="./resident"><span class="ico">👥</span><span>Residents record</span></a>
-          <a href="./rest-acc"><span class="ico">🔐</span><span>Acc Resident</span></a>
+          <a href="/dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
+          <a class="active" href="/certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
+          <a href="/resident"><span class="ico">👥</span><span>Residents record</span></a>
+          <a href="/rest-acc"><span class="ico">🔐</span><span>Resident Accounts</span></a>
+          @if ($isAdmin)
+            <a href="/dashboard"><span class="ico">🧭</span><span>Admin Dashboard</span></a>
+            <a href="/barangay"><span class="ico">👤</span><span>Barangay Official</span></a>
+          @endif
         </nav>
         <div class="adm-sidebar-footer">
           <button class="adm-logout" type="button" id="adminLogout"><span class="ico">⎋</span><span>Logout</span></button>
@@ -378,7 +481,7 @@
           </button>
           <div class="role">
             <strong id="topbarUserName">{{ session('admin_name', 'CHAIRMAN') }}</strong>
-            <span>barangay Admin</span>
+            <span>{{ $isAdmin ? 'barangay Admin' : 'barangay Official' }}</span>
           </div>
           <div class="top-icons">
             <div style="position:relative;display:inline-block;">
@@ -483,7 +586,7 @@
               </div>
               <div class="paper" id="paper" style="border-color: var(--certBorder, #2b77d1)">
                 <div class="cert-header-image-wrap">
-                  <img id="pvHeaderImage" class="cert-header-image" alt="Certificate header" src="{{ asset('img/Screenshot 2026-04-15 162812.jpg') }}" />
+                  <img id="pvHeaderImage" class="cert-header-image" alt="Certificate header" src="{{ asset('img/Screenshot_4.jpg') }}" />
                 </div>
                 
                 <div class="body" id="pvBody"></div>
@@ -513,6 +616,22 @@
           <p class="muted" id="templateLibraryCount" style="margin-top:0;margin-bottom:.8rem"></p>
           <div id="templateLibraryList" style="border-radius:10px;">
             <!-- populated by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="useTemplateConfirmModal" class="modal-overlay" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="useTemplateConfirmTitle" style="max-width:360px;">
+        <button class="modal-close" id="useTemplateConfirmClose" aria-label="Close">✕</button>
+        <div class="modal-header">
+          <h2 id="useTemplateConfirmTitle">Use Template</h2>
+        </div>
+        <div class="modal-body" style="text-align:center;">
+          <p id="useTemplateConfirmMessage" style="margin-top:0;line-height:1.5;">Apply this template now?</p>
+          <div style="display:flex;gap:10px;margin-top:15px;">
+            <button class="btn primary" type="button" id="useTemplateConfirmOkBtn" style="flex:1;">OK</button>
+            <button class="btn" type="button" id="useTemplateConfirmCancelBtn" style="flex:1;">Cancel</button>
           </div>
         </div>
       </div>
@@ -571,6 +690,9 @@
 
 <div id="notifToastHost" style="position:fixed;top:16px;right:16px;z-index:120;display:flex;flex-direction:column;gap:8px;pointer-events:none;"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
     <script>
       const TEMPLATE_KEY = 'digibarangay_certificate_template_v2';
       const TEMPLATE_OVERRIDE_KEY = 'digibarangay_cert_template_override_v1';
@@ -582,25 +704,110 @@
       const CERT_TEMPLATE_FILES = @json($pdfTemplateData);
       const URL_QUERY = new URLSearchParams(window.location.search);
       const IS_DOCS_VIEW = URL_QUERY.get('mode') === 'docs';
+      const CHECKBOX_STATE_KEY = 'digibarangay_certificate_checkbox_state_v1';
       const AUTO_HEADER_PRESET = {
         barangayName: 'BARANGAY 192',
         barangayAddress: 'City/Municipality, Province',
         contactNo: '',
       };
       const AUTO_HEADER_ASSETS = {
-        headerImage: '{{ asset('img/Screenshot 2026-04-15 162812.jpg') }}',
+        headerImage: '{{ asset('img/Screenshot_4.jpg') }}',
       };
-      const CERT_AUTOFILL_DATA = (() => {
+      function readCertificateAutofillData() {
         try {
           const raw = sessionStorage.getItem(CERT_AUTOFILL_KEY);
           if (!raw) return null;
-          sessionStorage.removeItem(CERT_AUTOFILL_KEY);
           const parsed = JSON.parse(raw);
           return parsed && typeof parsed === 'object' ? parsed : null;
         } catch {
           return null;
         }
-      })();
+      }
+
+      function buildAutofilledTemplate(templateData = {}) {
+        const auto = readCertificateAutofillData() || {};
+        return {
+          ...templateData,
+          bodyHeading: applyPlaceholders(templateData.bodyHeading || '', templateData),
+          mainBody: applyPlaceholders(templateData.mainBody || '', templateData),
+          purposeStatement: applyPlaceholders(templateData.purposeStatement || '', templateData),
+          issuedLine: applyPlaceholders(templateData.issuedLine || '', templateData),
+          autoResident: {
+            name: String(auto.name || '').trim(),
+            age: String(auto.age ?? '').trim(),
+            address: String(auto.address || '').trim(),
+            purpose: String(auto.purpose || '').trim(),
+            date: String(auto.date || '').trim(),
+            ref: String(auto.ref || '').trim(),
+          },
+        };
+      }
+
+      function formatCertificateDateValue(rawDate) {
+        const value = String(rawDate || '').trim();
+        const ordinalSuffix = (dayNumber) => {
+          const remainder10 = dayNumber % 10;
+          const remainder100 = dayNumber % 100;
+          if (remainder10 === 1 && remainder100 !== 11) return 'st';
+          if (remainder10 === 2 && remainder100 !== 12) return 'nd';
+          if (remainder10 === 3 && remainder100 !== 13) return 'rd';
+          return 'th';
+        };
+
+        if (!value) {
+          const now = new Date();
+          const today = now.getDate();
+          return `${today}${ordinalSuffix(today)}  of ${now.toLocaleString('en-US', { month: 'long' })}, ${now.getFullYear()}`;
+        }
+
+        const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        const slashMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        let day;
+        let monthIndex;
+        let year;
+
+        if (isoMatch) {
+          year = Number(isoMatch[1]);
+          monthIndex = Number(isoMatch[2]) - 1;
+          day = Number(isoMatch[3]);
+        } else if (slashMatch) {
+          monthIndex = Number(slashMatch[1]) - 1;
+          day = Number(slashMatch[2]);
+          year = Number(slashMatch[3]);
+        } else {
+          const parsed = new Date(value);
+          if (Number.isNaN(parsed.getTime())) {
+            return value;
+          }
+          day = parsed.getDate();
+          monthIndex = parsed.getMonth();
+          year = parsed.getFullYear();
+        }
+
+        const month = new Date(year, monthIndex, day).toLocaleString('en-US', { month: 'long' });
+        return `${day}${ordinalSuffix(day)}  of ${month}, ${year}`;
+      }
+
+      function replaceCertificateDatePatterns(html, dateDisplay) {
+        const source = String(html || '');
+        const replacement = `this ${dateDisplay}, City of Manila.`;
+        return source
+          .replace(/IN WITNESS WHERE OF I have hereunto set my hand and affixed the official seal of this office\./gi, 'IN WITNESS WHERE OF I have hereunto set my hand and affixed the official seal of this office.')
+          .replace(/this <u>_____<\/u> of , City of Manila\./gi, replacement)
+          .replace(/this <u>___<\/u>th  of , City of Manila\./gi, replacement)
+          .replace(/Issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist\. II this <u>___<\/u>th day of, City of Manila\./gi, `Issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II ${replacement}`)
+          .replace(/Issued in the Office of the Barangay Chairman, Barangay 192 Zone 17 District II this <u>___<\/u>th day of City of Manila\./gi, `Issued in the Office of the Barangay Chairman, Barangay 192 Zone 17 District II ${replacement}`)
+          .replace(/done and issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist\. II this <u>____<\/u> day of City of Manila\./gi, `Done and issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II ${replacement}`)
+          .replace(/issued in the Office of the Barangay Chairman, Barangay 192 Zone 17 District II this <u>___<\/u>th day of City of Manila\./gi, `Issued in the Office of the Barangay Chairman, Barangay 192 Zone 17 District II ${replacement}`)
+          .replace(/signed this <u>___<\/u>  of <u>_____________<\/u>, in Barangay 192 Zone 17 District 2 Tondo, City of Manila\./gi, `Signed ${replacement}`);
+      }
+
+      function buildFormalIssuedLine(prefix, includeSealNote = true) {
+        const intro = includeSealNote
+          ? 'IN WITNESS WHERE OF I have hereunto set my hand and affixed the official seal of this office.\n\n'
+          : '';
+        return `${intro}${prefix} this (DATE), City of Manila.`;
+      }
 
       const CERT_TEMPLATE_OVERRIDE_DATA = (() => {
         try {
@@ -744,7 +951,7 @@
         purposeStatement:
           'This further certifies that the subject person mentioned above and her immediate family members/relatives are not involved in any illegal activities, not listed in BADAC watchlist or drug personalities and not connected nor member of any left leaning group/organizations.',
         issuedLine:
-          'This certification is being issued for whatever legal purpose it may serve.\n\nDone and issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II this (DATE), City of Manila. NOT VALID WITHOUT BARANGAY SEAL ',
+          buildFormalIssuedLine('Issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II') + ' NOT VALID WITHOUT BARANGAY SEAL ',
 
         // signature
         signName: 'MARIA MAGDALENA H. LEGASPI',
@@ -781,18 +988,19 @@
       }
 
       function applyPlaceholders(text, template) {
-        const auto = CERT_AUTOFILL_DATA || {};
+        const auto = readCertificateAutofillData() || {};
         const autoName = String(auto.name || '').trim();
         const autoAge = String(auto.age ?? '').trim();
         const autoAddress = String(auto.address || '').trim();
         const autoPurpose = String(auto.purpose || '').trim();
         const autoDate = String(auto.date || '').trim();
+        const autoDateDisplay = formatCertificateDateValue(autoDate);
         const sample = {
           '(NAME)': autoName || 'JUAN DELA CRUZ',
           '(AGE)': autoAge || '21',
           '(ADDRESS)': autoAddress || '17 Sampaguita Street, Barangay 192',
           '(PURPOSE)': autoPurpose || 'Employment',
-          '(DATE)': autoDate || new Date().toLocaleDateString(),
+          '(DATE)': autoDateDisplay,
           '(BARANGAY)': template.barangayName || DEFAULT_TEMPLATE.barangayName,
         };
         let out = String(text || '');
@@ -821,9 +1029,24 @@
         // Replace any remaining long underscores with name (fallback)
         out = out.replace(/<u>______________________________<\/u>/g, `<u>${autoName}</u>`);
         
-        // Replace date fields (various lengths)
+        // Replace date fields (various lengths) with a formatted display
         out = out.replace(/<u>_____<\/u>/g, `<u>${autoDate}</u>`);
-        out = out.replace(/<u>___<\/u>/g, `<u>${autoDate}</u>`);
+        out = out.replace(/<u>___<\/u>/g, `<u>${autoDateDisplay}</u>`);
+
+        // Auto-fill validity date (one year from issuance) where indicated
+        try {
+          const baseDate = autoDate ? new Date(autoDate) : new Date();
+          const validDate = new Date(baseDate);
+          validDate.setFullYear(validDate.getFullYear() + 1);
+          const validIso = validDate.toISOString().slice(0,10);
+          const validDisplay = formatCertificateDateValue(validIso);
+          out = out.replace(/This certification is valid until <u>[_]+<\/u>/i, `This certification is valid until <u>${validDisplay}<\/u>`);
+        } catch (e) {
+          // ignore date parsing errors
+        }
+
+        // Replace remaining medium-length underscores (used for place/address) with autoAddress
+        out = out.replace(/<u>_{6,15}<\/u>/g, `<u>${autoAddress}</u>`);
         
         return out;
       }
@@ -833,6 +1056,57 @@
           .replaceAll('&', '&amp;')
           .replaceAll('<', '&lt;')
           .replaceAll('>', '&gt;');
+      }
+
+      function getCheckboxStateKey(template = {}) {
+        const basis = [template.certificateType, template.bodyHeading]
+          .map((value) => String(value || '').trim())
+          .filter(Boolean)
+          .join(' | ')
+          .trim() || 'default';
+
+        return `${CHECKBOX_STATE_KEY}:${basis.toLowerCase().replace(/\s+/g, '_')}`;
+      }
+
+      function loadCheckboxState(stateKey) {
+        try {
+          const raw = localStorage.getItem(stateKey);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed.map((value) => !!value) : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveCheckboxState(stateKey, values) {
+        try {
+          localStorage.setItem(stateKey, JSON.stringify((Array.isArray(values) ? values : []).map((value) => !!value)));
+        } catch (err) {
+          console.warn('Unable to store checkbox state', err);
+        }
+      }
+
+      function captureCheckboxState(paper, stateKey) {
+        if (!paper || !stateKey) return [];
+        const values = Array.from(paper.querySelectorAll('.pdf-check')).map((input) => !!input.checked);
+        saveCheckboxState(stateKey, values);
+        return values;
+      }
+
+      function renderPdfCheckboxes(html, stateSource) {
+        const source = String(html || '');
+        const checkboxState = Array.isArray(stateSource) ? stateSource : [];
+        let checkboxIndex = 0;
+
+        return source.replace(/&#x2611;|&#x2610;|☑|☐/g, (match) => {
+          const defaultChecked = match === '&#x2611;' || match === '☑';
+          const checked = checkboxIndex < checkboxState.length ? !!checkboxState[checkboxIndex] : defaultChecked;
+          const ariaLabel = checked ? 'Selected checkbox' : 'Unselected checkbox';
+          const htmlInput = `<input type="checkbox" class="pdf-check" data-checkbox-index="${checkboxIndex}" ${checked ? 'checked ' : ''}aria-label="${ariaLabel}" />`;
+          checkboxIndex += 1;
+          return htmlInput;
+        });
       }
 
       function setPaperLogo(dataUrl) {
@@ -877,12 +1151,13 @@
         const withAutoHeader = { ...t, ...AUTO_HEADER_PRESET };
         
         // Apply auto-fill data to form fields if available
-        const auto = CERT_AUTOFILL_DATA || {};
+        const auto = readCertificateAutofillData() || {};
         const autoName = String(auto.name || '').trim();
         const autoAge = String(auto.age ?? '').trim();
         const autoAddress = String(auto.address || '').trim();
         const autoPurpose = String(auto.purpose || '').trim();
         const autoDate = String(auto.date || '').trim();
+        const autoDateDisplay = formatCertificateDateValue(autoDate);
         
         // Helper function to replace placeholders in text
         function replacePlaceholders(text) {
@@ -892,7 +1167,7 @@
             .replace(/\(AGE\)/g, autoAge)
             .replace(/\(ADDRESS\)/g, autoAddress)
             .replace(/\(PURPOSE\)/g, autoPurpose)
-            .replace(/\(DATE\)/g, autoDate);
+            .replace(/\(DATE\)/g, autoDateDisplay);
           
           // Replace underscore patterns in <u> tags for PDF templates
           // Process in order to handle multiple fields correctly
@@ -919,9 +1194,24 @@
           // Replace any remaining long underscores with name (fallback)
           result = result.replace(/<u>______________________________<\/u>/g, `<u>${autoName}</u>`);
           
-          // Replace date fields (various lengths)
+          // Replace date fields (various lengths) with formatted display
           result = result.replace(/<u>_____<\/u>/g, `<u>${autoDate}</u>`);
-          result = result.replace(/<u>___<\/u>/g, `<u>${autoDate}</u>`);
+          result = result.replace(/<u>___<\/u>/g, `<u>${autoDateDisplay}</u>`);
+
+          // Auto-fill validity date (one year from issuance) where indicated
+          try {
+            const base = autoDate ? new Date(autoDate) : new Date();
+            const v = new Date(base);
+            v.setFullYear(v.getFullYear() + 1);
+            const validIso = v.toISOString().slice(0,10);
+            const validDisp = formatCertificateDateValue(validIso);
+            result = result.replace(/This certification is valid until <u>[_]+<\/u>/i, `This certification is valid until <u>${validDisp}<\/u>`);
+          } catch (e) {
+            // ignore
+          }
+
+          // Replace remaining medium-length underscores (place/address) with autoAddress
+          result = result.replace(/<u>_{6,15}<\/u>/g, `<u>${autoAddress}</u>`);
           
           return result;
         }
@@ -988,6 +1278,11 @@
 
       function renderPreview(t) {
         const withAutoHeader = { ...t, ...AUTO_HEADER_PRESET };
+        const checkboxStateKey = getCheckboxStateKey(withAutoHeader);
+        const capturedCheckboxState = captureCheckboxState(document.getElementById('paper'), checkboxStateKey);
+        const persistedCheckboxState = Array.isArray(t.checkboxState) && t.checkboxState.length
+          ? t.checkboxState
+          : (capturedCheckboxState.length ? capturedCheckboxState : loadCheckboxState(checkboxStateKey));
 
         const heading = applyPlaceholders(t.bodyHeading || DEFAULT_TEMPLATE.bodyHeading, t);
         const mainBody = applyPlaceholders(t.mainBody || DEFAULT_TEMPLATE.mainBody, t);
@@ -999,7 +1294,7 @@
         let bodyHtml;
         if (hasHtmlTags) {
           // If content has HTML tags, use it directly (template library content)
-          bodyHtml = mainBody;
+          bodyHtml = renderPdfCheckboxes(mainBody, persistedCheckboxState);
         } else {
           // If content is plain text, format it with divs and escape HTML
           const bodyLines = [heading, '', ...mainBody.split('\n'), '', ...purpose.split('\n')];
@@ -1007,6 +1302,8 @@
             .map(line => '<div>' + escapeHtml(line) + '</div>')
             .join('');
         }
+        bodyHtml = renderPdfCheckboxes(bodyHtml, persistedCheckboxState);
+          bodyHtml = replaceCertificateDatePatterns(bodyHtml, formatCertificateDateValue(readCertificateAutofillData()?.date || ''));
         document.getElementById('pvBody').innerHTML = bodyHtml;
 
         document.getElementById('pvIssued').textContent = applyPlaceholders(t.issuedLine || DEFAULT_TEMPLATE.issuedLine, t);
@@ -1034,6 +1331,27 @@
 
         // Logo
         setAutoHeaderDesign();
+
+        // If a pasted logo was added (via setPaperLogo which adds [data-logo]),
+        // hide the main header image so only the pasted logo appears in the PDF.
+        try {
+          const paperEl = document.getElementById('paper');
+          const headerImgEl = document.getElementById('pvHeaderImage');
+          let hideHeader = false;
+
+          if (paperEl) {
+            // Only hide the header when a real pasted logo element exists,
+            // not when other data-URL images such as the signature are present.
+            const pastedLogo = paperEl.querySelector('[data-logo]');
+            if (pastedLogo) hideHeader = true;
+          }
+
+          if (headerImgEl) {
+            headerImgEl.style.display = hideHeader ? 'none' : '';
+          }
+        } catch (err) {
+          console.warn('Unable to toggle header/logo display for print preview', err);
+        }
       }
 
       // Tab switching
@@ -1070,6 +1388,16 @@
       const signImageInput = document.getElementById('signImage');
       const signImageData = document.getElementById('signImageData');
       const signImageMeta = document.getElementById('signImageMeta');
+      const paper = document.getElementById('paper');
+
+      if (paper) {
+        paper.addEventListener('change', (event) => {
+          const target = event.target;
+          if (!target || !target.classList || !target.classList.contains('pdf-check')) return;
+          saveCheckboxState(getCheckboxStateKey(readForm()), Array.from(paper.querySelectorAll('.pdf-check')).map((input) => !!input.checked));
+        });
+      }
+
       if (signImageInput) {
         signImageInput.addEventListener('change', () => {
           const file = signImageInput.files && signImageInput.files[0];
@@ -1144,6 +1472,12 @@
       const templateLibraryClose = document.getElementById('templateLibraryClose');
       const templateLibraryList = document.getElementById('templateLibraryList');
       const templateLibraryCount = document.getElementById('templateLibraryCount');
+      const useTemplateConfirmModal = document.getElementById('useTemplateConfirmModal');
+      const useTemplateConfirmClose = document.getElementById('useTemplateConfirmClose');
+      const useTemplateConfirmOkBtn = document.getElementById('useTemplateConfirmOkBtn');
+      const useTemplateConfirmCancelBtn = document.getElementById('useTemplateConfirmCancelBtn');
+      const useTemplateConfirmMessage = document.getElementById('useTemplateConfirmMessage');
+      let pendingTemplateIndex = null;
 
       function normalizeFileName(value) {
         return String(value || '').trim().toLowerCase();
@@ -1169,7 +1503,7 @@
             mainBody: 'I, (NAME), of legal age and a resident of (ADDRESS), hereby undertake and affirm the truthfulness of all information I submitted for this request.',
             purposeStatement: 'This undertaking is executed for (PURPOSE).',
             signTitle: 'Applicant / Affiant',
-            issuedLine: 'Executed this (DATE) at (BARANGAY).',
+            issuedLine: buildFormalIssuedLine('Issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II', false),
           };
         }
 
@@ -1180,7 +1514,7 @@
             certificateType: 'CERTIFICATE FOR 1ST-TIME JOB SEEKER',
             mainBody: 'This is to certify that (NAME), of legal age, a resident of (ADDRESS), is a FIRST-TIME JOB SEEKER as defined under Republic Act No. 11261 (First Time Job Seekers Act of 2019).',
             purposeStatement: 'This certification is issued upon the request of the above-named person for the purpose of seeking employment.',
-            issuedLine: 'Issued this (DATE) at (BARANGAY) in accordance with RA 11261.',
+            issuedLine: buildFormalIssuedLine('Issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II', false),
           };
         }
 
@@ -1191,7 +1525,7 @@
             certificateType: 'BARANGAY INDIGENCY',
             mainBody: 'This is to certify that (NAME), of legal age, and a resident of (ADDRESS), belongs to an indigent family in this barangay.',
             purposeStatement: 'This certification is issued upon the request of the above-named person for (PURPOSE).',
-            issuedLine: 'Issued this (DATE) at (BARANGAY) for whatever legal purpose it may serve.',
+            issuedLine: buildFormalIssuedLine('Issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II', true),
           };
         }
 
@@ -1202,7 +1536,7 @@
             certificateType: 'BARANGAY CERTIFICATE',
             mainBody: 'This is to certify that (NAME), (AGE) years old, a resident of (ADDRESS), is a bonafide resident of this barangay.',
             purposeStatement: 'This certification is issued upon the request of the above-named person for (PURPOSE).',
-            issuedLine: 'Issued this (DATE) at (BARANGAY) for whatever legal purpose it may serve.',
+            issuedLine: buildFormalIssuedLine('Issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II', true),
           };
         }
 
@@ -1213,7 +1547,7 @@
             certificateType: 'CERTIFICATE OF GOOD MORAL CHARACTER',
             mainBody: 'This is to certify that (NAME), (AGE) years old, _________ is a bonafide resident of this barangay with postal address at (ADDRESS) St. Bo. Obrero Tondo, Manila, who is known to me as a person of good moral character and has no derogatory record as of this date.',
             purposeStatement: 'This further certifies that the subject person mentioned above and her immediate family members/relatives are not involved in any illegal activities, not listed in BADAC watchlist or drug personalities and not connected nor member of any left leaning group/organizations.',
-            issuedLine: 'This certification is being issued for whatever legal purpose it may serve.\n\nDone and issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II this (DATE), City of Manila.',
+            issuedLine: buildFormalIssuedLine('Issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II', true),
           };
         }
 
@@ -1224,7 +1558,7 @@
             certificateType: 'CERTIFICATE OF ONENESS',
             mainBody: 'This is to certify that (NAME), a resident of (ADDRESS), is recognized as one and the same person for legal and official purposes.',
             purposeStatement: 'Issued upon request for (PURPOSE).',
-            issuedLine: 'Issued this (DATE) at (BARANGAY) for record and identification purposes.',
+            issuedLine: buildFormalIssuedLine('Issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II', true),
           };
         }
 
@@ -1234,16 +1568,16 @@
           certificateType: 'BARANGAY CERTIFICATE',
           mainBody: 'This is to certify that (NAME), (AGE) years old, _________ is a bonafide resident of this barangay with postal address at (ADDRESS) St. Bo. Obrero Tondo, Manila, who is known to me as a person of good moral character and has no derogatory record as of this date.',
           purposeStatement: 'This further certifies that the subject person mentioned above and her immediate family members/relatives are not involved in any illegal activities, not listed in BADAC watchlist or drug personalities and not connected nor member of any left leaning group/organizations.',
-          issuedLine: 'This certification is being issued for whatever legal purpose it may serve.\n\nDone and issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II this (DATE), City of Manila.',
+          issuedLine: buildFormalIssuedLine('Issued at the office of the Barangay Chairman, Barangay 192 Zone-17 Dist. II', true),
         };
       }
 
       function applyTemplateFromFileName(fileName) {
         const preset = getTemplatePresetFromFileName(fileName);
-        const merged = {
+        const merged = buildAutofilledTemplate({
           ...readForm(),
           ...preset,
-        };
+        });
 
         hydrateForm(merged);
         renderPreview(merged);
@@ -1251,6 +1585,50 @@
         setActiveTab('body');
         closeTemplateLibrary();
         alert('Template applied: ' + fileName);
+      }
+
+      function openUseTemplateConfirmModal(fileName, templateIndex) {
+        pendingTemplateIndex = Number.isInteger(templateIndex) ? templateIndex : null;
+        if (useTemplateConfirmMessage) {
+          useTemplateConfirmMessage.textContent = 'Apply template "' + fileName + '"?';
+        }
+        if (!useTemplateConfirmModal) return;
+        useTemplateConfirmModal.hidden = false;
+        useTemplateConfirmModal.classList.add('open');
+      }
+
+      function closeUseTemplateConfirmModal() {
+        pendingTemplateIndex = null;
+        if (!useTemplateConfirmModal) return;
+        useTemplateConfirmModal.classList.remove('open');
+        useTemplateConfirmModal.hidden = true;
+      }
+
+      function confirmPendingTemplate() {
+        if (pendingTemplateIndex === null || !CERT_TEMPLATE_FILES[pendingTemplateIndex]) return;
+        const file = CERT_TEMPLATE_FILES[pendingTemplateIndex];
+        const templateData = buildAutofilledTemplate({
+          barangayName: AUTO_HEADER_PRESET.barangayName,
+          barangayAddress: AUTO_HEADER_PRESET.barangayAddress,
+          certificateType: file.name.replace(/\.pdf$/i, '').replace(/-/g, ' ').replace(/_/g, ' '),
+          contactNo: AUTO_HEADER_PRESET.contactNo,
+          bodyHeading: '',
+          mainBody: file.content || '',
+          purposeStatement: '',
+          issuedLine: '',
+          signName: '',
+          signTitle: '',
+          signImage: '',
+          borderColor: '#2b77d1',
+          issueEmail: '',
+        });
+
+        hydrateForm(templateData);
+        renderPreview(templateData);
+        setActiveTab('body');
+        closeUseTemplateConfirmModal();
+        closeTemplateLibrary();
+        alert('Template applied: ' + file.name);
       }
 
       function renderTemplateLibrary() {
@@ -1351,32 +1729,17 @@
           if (!btn) return;
           const idx = Number(btn.getAttribute('data-template-index'));
           if (Number.isNaN(idx) || !CERT_TEMPLATE_FILES[idx]) return;
-          // Load the PDF HTML content into the mainBody field and preview
           const file = CERT_TEMPLATE_FILES[idx];
-          const templateData = {
-            barangayName: AUTO_HEADER_PRESET.barangayName,
-            barangayAddress: AUTO_HEADER_PRESET.barangayAddress,
-            certificateType: file.name.replace(/\.pdf$/i, '').replace(/-/g, ' ').replace(/_/g, ' '),
-            contactNo: AUTO_HEADER_PRESET.contactNo,
-            bodyHeading: '',
-            mainBody: file.content || '',
-            purposeStatement: '',
-            issuedLine: '',
-            signName: '',
-            signTitle: '',
-            signImage: '',
-            borderColor: '#2b77d1',
-            issueEmail: '',
-          };
-          
-          // Apply auto-fill data to the template content
-          hydrateForm(templateData);
-          
-          // Render preview with auto-fill applied
-          renderPreview(templateData);
-          setActiveTab('body');
-          closeTemplateLibrary();
-          alert('Template applied: ' + file.name);
+          openUseTemplateConfirmModal(file.name, idx);
+        });
+      }
+
+      useTemplateConfirmOkBtn?.addEventListener('click', confirmPendingTemplate);
+      useTemplateConfirmCancelBtn?.addEventListener('click', closeUseTemplateConfirmModal);
+      useTemplateConfirmClose?.addEventListener('click', closeUseTemplateConfirmModal);
+      if (useTemplateConfirmModal) {
+        useTemplateConfirmModal.addEventListener('click', (event) => {
+          if (event.target === useTemplateConfirmModal) closeUseTemplateConfirmModal();
         });
       }
 
@@ -1419,6 +1782,174 @@
         pdfPreviewModal.hidden = true;
       }
 
+      async function fetchCertificatePdfBase64(snapshotTemplate) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const autofill = readCertificateAutofillData() || {};
+        const payload = {
+          ref: String(autofill.ref || '').trim(),
+          name: String(autofill.name || '').trim(),
+          age: String(autofill.age ?? '').trim(),
+          address: String(autofill.address || '').trim(),
+          purpose: String(autofill.purpose || '').trim(),
+          date: String(autofill.date || '').trim(),
+          template: snapshotTemplate && typeof snapshotTemplate === 'object' ? snapshotTemplate : {},
+        };
+
+        const response = await fetch('/docs/certificate-pdf', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/pdf',
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || 'Unable to generate certificate PDF.');
+        }
+
+        const blob = await response.blob();
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = String(reader.result || '');
+            resolve(result.split(',')[1] || '');
+          };
+          reader.onerror = () => reject(new Error('Unable to read generated PDF.'));
+          reader.readAsDataURL(blob);
+        });
+      }
+
+      async function generateCertificatePdfBase64(snapshotTemplate) {
+        try {
+          const autofill = readCertificateAutofillData() || {};
+          sessionStorage.setItem(CERT_AUTOFILL_KEY, JSON.stringify({
+            ref: String(autofill.ref || '').trim(),
+            name: String(autofill.name || '').trim(),
+            age: String(autofill.age ?? '').trim(),
+            address: String(autofill.address || '').trim(),
+            purpose: String(autofill.purpose || '').trim(),
+            date: String(autofill.date || '').trim(),
+            email: String(autofill.email || '').trim(),
+          }));
+          if (snapshotTemplate && typeof snapshotTemplate === 'object') {
+            sessionStorage.setItem(TEMPLATE_OVERRIDE_KEY, JSON.stringify(snapshotTemplate));
+          } else {
+            sessionStorage.removeItem(TEMPLATE_OVERRIDE_KEY);
+          }
+        } catch (err) {
+          console.warn('Unable to store certificate preview data', err);
+        }
+
+        if (!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF) {
+          return await fetchCertificatePdfBase64(snapshotTemplate);
+        }
+
+        const sourceFrame = document.createElement('iframe');
+        sourceFrame.setAttribute('aria-hidden', 'true');
+        sourceFrame.style.position = 'fixed';
+        sourceFrame.style.left = '0';
+        sourceFrame.style.top = '0';
+        sourceFrame.style.opacity = '0';
+        sourceFrame.style.pointerEvents = 'none';
+        sourceFrame.style.zIndex = '-1';
+        sourceFrame.style.width = '794px';
+        sourceFrame.style.height = '1123px';
+        sourceFrame.style.border = '0';
+        sourceFrame.src = '/certificate?mode=docs&t=' + Date.now();
+        document.body.appendChild(sourceFrame);
+
+        try {
+          await new Promise((resolve, reject) => {
+            const failTimer = setTimeout(() => reject(new Error('Timed out loading certificate preview.')), 20000);
+            sourceFrame.onload = () => {
+              clearTimeout(failTimer);
+              resolve();
+            };
+            sourceFrame.onerror = () => {
+              clearTimeout(failTimer);
+              reject(new Error('Unable to load certificate preview.'));
+            };
+          });
+
+          const sourceDoc = sourceFrame.contentDocument;
+          const paper = sourceDoc && sourceDoc.getElementById('paper');
+          if (!sourceDoc || !paper) {
+            throw new Error('Certificate preview content not found.');
+          }
+
+          if (sourceDoc.fonts && sourceDoc.fonts.ready) {
+            try { await sourceDoc.fonts.ready; } catch (_) {}
+          }
+
+          const imageEls = Array.from(sourceDoc.images || []);
+          await Promise.all(imageEls.map((img) => {
+            if (img.complete) return Promise.resolve();
+            return new Promise((resolve) => {
+              img.addEventListener('load', resolve, { once: true });
+              img.addEventListener('error', resolve, { once: true });
+            });
+          }));
+
+          await new Promise((resolve) => setTimeout(resolve, 220));
+
+          const rect = paper.getBoundingClientRect();
+          const captureWidth = Math.max(
+            1,
+            Math.ceil(rect.width),
+            Math.ceil(paper.scrollWidth || 0),
+            Math.ceil(paper.offsetWidth || 0)
+          );
+          const captureHeight = Math.max(
+            1,
+            Math.ceil(rect.height),
+            Math.ceil(paper.scrollHeight || 0),
+            Math.ceil(paper.offsetHeight || 0)
+          );
+
+          const canvas = await window.html2canvas(paper, {
+            scale: 2.2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            width: captureWidth,
+            height: captureHeight,
+            windowWidth: Math.max(sourceDoc.documentElement.scrollWidth, captureWidth),
+            windowHeight: Math.max(sourceDoc.documentElement.scrollHeight, captureHeight),
+            scrollX: 0,
+            scrollY: 0,
+          });
+
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+          pdf.setDisplayMode('fullpage', 'single', 'UseNone');
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+          const imageData = canvas.toDataURL('image/png');
+          const margin = 18;
+          const drawableWidth = pageWidth - (margin * 2);
+          const drawableHeight = pageHeight - (margin * 2);
+          const imageRatio = canvas.width / canvas.height;
+          let renderWidth = drawableWidth;
+          let renderHeight = renderWidth / imageRatio;
+
+          if (renderHeight > drawableHeight) {
+            renderHeight = drawableHeight;
+            renderWidth = renderHeight * imageRatio;
+          }
+
+          const offsetX = (pageWidth - renderWidth) / 2;
+          const offsetY = (pageHeight - renderHeight) / 2;
+          pdf.addImage(imageData, 'PNG', offsetX, offsetY, renderWidth, renderHeight, undefined, 'FAST');
+
+          return pdf.output('datauristring').split(',')[1] || '';
+        } finally {
+          sourceFrame.remove();
+        }
+      }
+
       function openPdfPreview() {
         const sourcePaper = document.getElementById('paper');
         if (!sourcePaper || !pdfPreviewModal || !pdfPreviewMount) return;
@@ -1428,6 +1959,27 @@
 
         const mirror = sourcePaper.cloneNode(true);
         mirror.id = 'paperMirror';
+
+        // Ensure checkbox states are preserved in the cloned preview
+        try {
+          const sourceChecks = Array.from(sourcePaper.querySelectorAll('.pdf-check'));
+          const mirrorChecks = Array.from(mirror.querySelectorAll('.pdf-check'));
+          for (let i = 0; i < mirrorChecks.length; i++) {
+            if (!mirrorChecks[i]) continue;
+            const src = sourceChecks[i];
+            if (src) {
+              mirrorChecks[i].checked = !!src.checked;
+              if (mirrorChecks[i].checked) {
+                mirrorChecks[i].setAttribute('checked', 'checked');
+              } else {
+                mirrorChecks[i].removeAttribute('checked');
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Unable to sync checkbox states for PDF preview', err);
+        }
+
         pdfPreviewMount.innerHTML = '';
         pdfPreviewMount.appendChild(mirror);
 
@@ -1435,7 +1987,7 @@
         pdfPreviewModal.classList.add('open');
       }
 
-      function updateRequestPdfSavedState(ref, fileName, savedTemplate, savedPaperHtml) {
+      function updateRequestPdfSavedState(ref, fileName, savedTemplate, savedPaperHtml, savedPdfAttachmentBase64) {
         const targetRef = String(ref || '').trim();
         if (!targetRef) return;
 
@@ -1457,6 +2009,9 @@
         if (typeof savedPaperHtml === 'string' && savedPaperHtml.trim()) {
           allRequests[idx].savedPaperHtml = savedPaperHtml;
         }
+        if (typeof savedPdfAttachmentBase64 === 'string' && savedPdfAttachmentBase64.trim()) {
+          allRequests[idx].pdfAttachmentBase64 = savedPdfAttachmentBase64;
+        }
         localStorage.setItem(REQUESTS_KEY, JSON.stringify(allRequests));
       }
 
@@ -1475,9 +2030,11 @@
 
           pdfPrintBtn.disabled = true;
           try {
-            renderPreview(readForm());
-            const refFromAutofill = String(CERT_AUTOFILL_DATA?.ref || '').trim();
             const snapshotTemplate = readForm();
+            const checkboxStateKey = getCheckboxStateKey(snapshotTemplate);
+            snapshotTemplate.checkboxState = captureCheckboxState(source, checkboxStateKey);
+            renderPreview(snapshotTemplate);
+            const refFromAutofill = String(readCertificateAutofillData()?.ref || '').trim();
             saveTemplate(snapshotTemplate);
 
             if (!refFromAutofill) {
@@ -1488,9 +2045,16 @@
               return;
             }
 
+            const pdfAttachmentBase64 = await generateCertificatePdfBase64(snapshotTemplate);
             const snapshotHtml = source.outerHTML;
             const fileName = refFromAutofill + '.pdf';
-            updateRequestPdfSavedState(refFromAutofill, fileName, snapshotTemplate, snapshotHtml);
+            updateRequestPdfSavedState(
+              refFromAutofill,
+              fileName,
+              snapshotTemplate,
+              snapshotHtml,
+              pdfAttachmentBase64 ? ('data:application/pdf;base64,' + pdfAttachmentBase64) : ''
+            );
             openStatusModal(
               'Saved',
               'PDF format has been linked to this request. Dashs, Resident, and Docs can now view the saved certificate format.'

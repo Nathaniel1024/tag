@@ -75,9 +75,10 @@ class OfficerController extends Controller
             ], 401);
         }
 
-        if (strtolower((string) $officer->role) !== 'admin') {
+        $role = strtolower(trim((string) $officer->role));
+        if (!in_array($role, ['admin', 'official'], true)) {
             return response()->json([
-                'message' => 'Access denied. Admin accounts only.'
+                'message' => 'Access denied. Admin or official accounts only.'
             ], 403);
         }
 
@@ -90,12 +91,13 @@ class OfficerController extends Controller
 
         $request->session()->regenerate();
         $request->session()->put('admin_logged_in', true);
-        $request->session()->put('admin_role', 'admin');
+        $request->session()->put('admin_role', $role);
         $request->session()->put('admin_id', $officer->id);
         $request->session()->put('admin_name', $officer->fullname);
 
         return response()->json([
-            'message' => 'Admin login successful',
+            'message' => $role === 'official' ? 'Official login successful' : 'Admin login successful',
+            'redirect' => $role === 'official' ? '/dashs' : '/dashboard',
             'user' => [
                 'id' => $officer->id,
                 'fullname' => $officer->fullname,
@@ -138,10 +140,44 @@ class OfficerController extends Controller
     {
         $officers = BarangayOfficer::query()
             ->latest('id')
-            ->get(['id', 'fullname', 'username', 'email', 'contact', 'address', 'role', 'created_at']);
+            ->get(['id', 'fullname', 'username', 'email', 'contact', 'address', 'role', 'created_at', 'last_seen'])
+            ->map(function (BarangayOfficer $officer) {
+                $officer->is_online = $officer->last_seen && $officer->last_seen->gt(now()->subMinutes(2));
+                return $officer;
+            });
 
         return response()->json([
             'data' => $officers,
+        ]);
+    }
+
+    public function updateLastSeen(Request $request)
+    {
+        if (session('admin_logged_in') !== true || ! in_array(session('admin_role'), ['admin', 'official'], true)) {
+            return response()->json([
+                'message' => 'Unauthorized. Admin or official access required.'
+            ], 403);
+        }
+
+        $adminId = session('admin_id');
+        if (! $adminId) {
+            return response()->json([
+                'message' => 'Unable to determine current admin.'
+            ], 400);
+        }
+
+        $officer = BarangayOfficer::find($adminId);
+        if (! $officer) {
+            return response()->json([
+                'message' => 'Officer record not found.'
+            ], 404);
+        }
+
+        $officer->last_seen = now();
+        $officer->save();
+
+        return response()->json([
+            'message' => 'Last seen updated.',
         ]);
     }
 

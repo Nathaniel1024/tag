@@ -8,8 +8,9 @@ use App\Http\Controllers\Api\OfficerController;
 use App\Http\Controllers\Website\WebsiteController;
 
 $adminViewResponse = function (string $view) {
-    if (session('admin_logged_in') !== true || session('admin_role') !== 'admin') {
-        return redirect('/loginadmin');
+    if (session('admin_logged_in') !== true || ! in_array(session('admin_role'), ['admin', 'official'], true)) {
+        // Redirect to login and indicate unauthorized access so the login page can show a modal
+        return redirect('/loginadmin?unauth=1');
     }
 
     return response()
@@ -81,8 +82,8 @@ Route::post('/loginadmin/logout', function (Request $request) {
     ->header('Expires', '0');
 })->name('loginadmin.logout');
 
-Route::get('/dash', function () use ($adminViewResponse) {
-    return $adminViewResponse('website.dashadmin');
+Route::get('/dash', function () {
+    return redirect('/dashs');
 });
 
 Route::get('/barangay', function () use ($adminViewResponse) {
