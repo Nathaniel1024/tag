@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BarangayOfficer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class OfficerController extends Controller
 {
@@ -138,11 +139,19 @@ class OfficerController extends Controller
 
     public function index()
     {
+        $columns = ['id', 'fullname', 'username', 'email', 'contact', 'address', 'role', 'created_at', 'updated_at'];
+        if (Schema::hasColumn('barangay_officers', 'last_seen')) {
+            $columns[] = 'last_seen';
+        }
+
         $officers = BarangayOfficer::query()
             ->latest('id')
-            ->get(['id', 'fullname', 'username', 'email', 'contact', 'address', 'role', 'created_at', 'last_seen'])
+            ->get($columns)
             ->map(function (BarangayOfficer $officer) {
-                $officer->is_online = $officer->last_seen && $officer->last_seen->gt(now()->subMinutes(2));
+                $officer->is_online = false;
+                if (Schema::hasColumn('barangay_officers', 'last_seen') && $officer->last_seen) {
+                    $officer->is_online = $officer->last_seen->gt(now()->subMinutes(2));
+                }
                 return $officer;
             });
 
