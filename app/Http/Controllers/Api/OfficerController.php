@@ -138,17 +138,30 @@ class OfficerController extends Controller
 
     public function index()
     {
-        $officers = BarangayOfficer::query()
-            ->latest('id')
-            ->get(['id', 'fullname', 'username', 'email', 'contact', 'address', 'role', 'created_at', 'last_seen'])
-            ->map(function (BarangayOfficer $officer) {
-                $officer->is_online = $officer->last_seen && $officer->last_seen->gt(now()->subMinutes(2));
-                return $officer;
-            });
+        // Check admin session
+        if (session('admin_logged_in') !== true || ! in_array(session('admin_role'), ['admin', 'official'], true)) {
+            return response()->json([
+                'message' => 'Unauthorized. Admin or official access required.'
+            ], 403);
+        }
 
-        return response()->json([
-            'data' => $officers,
-        ]);
+        try {
+            $officers = BarangayOfficer::query()
+                ->latest('id')
+                ->get(['id', 'fullname', 'username', 'email', 'contact', 'address', 'role', 'created_at', 'last_seen'])
+                ->map(function (BarangayOfficer $officer) {
+                    $officer->is_online = $officer->last_seen && $officer->last_seen->gt(now()->subMinutes(2));
+                    return $officer;
+                });
+
+            return response()->json([
+                'data' => $officers,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to load officers: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function updateLastSeen(Request $request)
