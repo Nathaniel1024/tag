@@ -139,25 +139,30 @@ class OfficerController extends Controller
 
     public function index()
     {
-        $columns = ['id', 'fullname', 'username', 'email', 'contact', 'address', 'role', 'created_at', 'updated_at'];
-        if (Schema::hasColumn('barangay_officers', 'last_seen')) {
-            $columns[] = 'last_seen';
+        // Check admin session
+        if (session('admin_logged_in') !== true || ! in_array(session('admin_role'), ['admin', 'official'], true)) {
+            return response()->json([
+                'message' => 'Unauthorized. Admin or official access required.'
+            ], 403);
         }
 
-        $officers = BarangayOfficer::query()
-            ->latest('id')
-            ->get($columns)
-            ->map(function (BarangayOfficer $officer) {
-                $officer->is_online = false;
-                if (Schema::hasColumn('barangay_officers', 'last_seen') && $officer->last_seen) {
-                    $officer->is_online = $officer->last_seen->gt(now()->subMinutes(2));
-                }
-                return $officer;
-            });
+        try {
+            $officers = BarangayOfficer::query()
+                ->latest('id')
+                ->get(['id', 'fullname', 'username', 'email', 'contact', 'address', 'role', 'created_at', 'last_seen'])
+                ->map(function (BarangayOfficer $officer) {
+                    $officer->is_online = $officer->last_seen && $officer->last_seen->gt(now()->subMinutes(2));
+                    return $officer;
+                });
 
-        return response()->json([
-            'data' => $officers,
-        ]);
+            return response()->json([
+                'data' => $officers,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to load officers: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function updateLastSeen(Request $request)
