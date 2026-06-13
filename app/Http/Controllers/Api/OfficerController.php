@@ -15,9 +15,14 @@ class OfficerController extends Controller
             ->latest('id')
             ->get(['id', 'fullname', 'username', 'email', 'contact', 'address', 'role', 'created_at']);
 
-        return response()->json([
-            'data' => $officers,
-        ]);
+            return response()->json([
+                'data' => $officers,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to load officers: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function register(Request $request)
