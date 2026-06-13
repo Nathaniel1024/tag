@@ -14,14 +14,9 @@ class BarangayOfficer extends Model
         'contact',
         'address',
         'role',
-        'last_seen',
     ];
     
     protected $hidden = [
         'password',
-    ];
-
-    protected $casts = [
-        'last_seen' => 'datetime',
     ];
 }
