@@ -37,6 +37,7 @@
 </head>
 <body>
   <div class="layout">
+    <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="brand">
         <img src="./logo_zed.png" alt="DIGIBARANGAY" />
@@ -60,6 +61,7 @@
       </button>
     </aside>
 
+    <!-- MAIN CONTENT -->
     <main class="main">
       <header class="topbar">
         <div class="topbar-title">
@@ -85,7 +87,9 @@
               </tr>
             </thead>
             <tbody>
-              <tr><td colspan="5" style="text-align:center;color:#666">Loading staff accounts...</td></tr>
+              <tr>
+                <td colspan="5" class="empty-row">Loading staff accounts...</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -110,6 +114,16 @@
           document.querySelector('#staffTable tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#666">No staff accounts yet.</td></tr>';
           return;
         }
+
+        const body = await res.json();
+        const staff = body.data || [];
+
+        if (staff.length === 0) {
+          document.querySelector('#staffTable tbody').innerHTML =
+            '<tr><td colspan="5" class="empty-row">No staff accounts yet.</td></tr>';
+          return;
+        }
+
         const rows = staff.map(s => `
           <tr>
             <td>${s.fullname || '-'}</td>
@@ -119,10 +133,12 @@
             <td><span style="color:#666">Saved</span></td>
           </tr>
         `).join('');
+
         document.querySelector('#staffTable tbody').innerHTML = rows;
       } catch (err) {
-        console.error('Load staff error', err);
-        document.querySelector('#staffTable tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#c9302c">Network error.</td></tr>';
+        console.error('Load staff error:', err);
+        document.querySelector('#staffTable tbody').innerHTML =
+          '<tr><td colspan="5" class="error-row">Network error.</td></tr>';
       }
     }
 

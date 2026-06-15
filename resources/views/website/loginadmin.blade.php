@@ -134,7 +134,13 @@
         body: JSON.stringify({ login, email: login, password })
       });
 
-      const body = await res.json().catch(() => ({}));
+      let body = {};
+      try {
+        body = await res.json();
+      } catch (jsonError) {
+        // JSON parse error, continue with empty object
+      }
+      
       if (!res.ok) {
         // Show specific modal based on response status
         if (res.status === 401) {

@@ -308,7 +308,12 @@
 					});
 
 					if (response.ok) {
-						const payload = await response.json().catch(() => ({}));
+					let payload = {};
+					try {
+						payload = await response.json();
+					} catch (e) {
+						payload = {};
+					}
 						const status = String(payload.status || payload.data?.status || '');
 						if (status) {
 							const state = certificateStatusLabel(status);
