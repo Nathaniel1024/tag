@@ -139,21 +139,22 @@ class OfficerController extends Controller
 
     public function index()
     {
-        $columns = ['id', 'fullname', 'username', 'email', 'contact', 'address', 'role', 'created_at', 'updated_at'];
-        if (Schema::hasColumn('barangay_officers', 'last_seen')) {
-            $columns[] = 'last_seen';
-        }
+        try {
+            $columns = ['id', 'fullname', 'username', 'email', 'contact', 'address', 'role', 'created_at', 'updated_at'];
+            if (Schema::hasColumn('barangay_officers', 'last_seen')) {
+                $columns[] = 'last_seen';
+            }
 
-        $officers = BarangayOfficer::query()
-            ->latest('id')
-            ->get($columns)
-            ->map(function (BarangayOfficer $officer) {
-                $officer->is_online = false;
-                if (Schema::hasColumn('barangay_officers', 'last_seen') && $officer->last_seen) {
-                    $officer->is_online = $officer->last_seen->gt(now()->subMinutes(2));
-                }
-                return $officer;
-            });
+            $officers = BarangayOfficer::query()
+                ->latest('id')
+                ->get($columns)
+                ->map(function (BarangayOfficer $officer) {
+                    $officer->is_online = false;
+                    if (Schema::hasColumn('barangay_officers', 'last_seen') && $officer->last_seen) {
+                        $officer->is_online = $officer->last_seen->gt(now()->subMinutes(2));
+                    }
+                    return $officer;
+                });
 
             return response()->json([
                 'data' => $officers,

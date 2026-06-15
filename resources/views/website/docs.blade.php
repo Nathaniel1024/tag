@@ -175,15 +175,31 @@
             <label>Bakit mo kailangan ang clearance? *
               <input name="purposeReason" type="text" placeholder="Hal. Requirement sa trabaho o school" required />
             </label>
-            <label>Upload Valid ID (optional)
-              <input name="idfile" type="file" accept="image/*,.pdf" />
+            <label>Upload Valid ID (photo of your ID) *
+              <input name="idfile" type="file" accept="image/*" />
+              <small style="display:block;font-size:.85rem;color:#475569;margin-top:.35rem">Upload a clear photo of your valid ID card, passport, or driver's license.</small>
             </label>
+            <div id="idPreview" style="display:none;margin-top:.8rem;">
+              <img id="idPreviewImage" alt="ID preview" style="max-width:100%;border-radius:10px;border:1px solid #e5e7eb;" />
+            </div>
           </fieldset>
           <div class="form-actions">
             <button type="button" class="btn" id="applyCancel">CANCEL</button>
             <button type="submit" class="btn primary">SUBMIT</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- View ID Image Modal -->
+  <div id="viewIdModal" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="viewIdTitle">
+      <button class="modal-close" id="viewIdModalClose" aria-label="Close">✕</button>
+      <div class="modal-header"><h2 id="viewIdTitle">Uploaded ID Image</h2></div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:1rem;align-items:center;">
+        <img id="viewIdImage" alt="Uploaded ID" style="max-width:100%;border-radius:14px;border:1px solid #e5e7eb;object-fit:contain;" />
+        <div id="viewIdCaption" style="font-size:.95rem;color:#334155;text-align:center;"></div>
       </div>
     </div>
   </div>
@@ -402,7 +418,10 @@
               || !!globalTemplate
               ? ('<span class="status-badge status-approved">Saved</span>' + certTypeNote)
               : '<span class="status-badge status-pending">Not Saved</span>';
-            const actions = `<div class="actions-cell"><button class="action-btn" data-action="view" data-ref="${r.ref||''}" title="View">👁️</button><button class="action-btn" data-action="download" data-ref="${r.ref||''}" title="Download">⬇️</button><button class="action-btn" data-action="delete" data-ref="${r.ref||''}" title="Delete">🗑️</button></div>`;
+            const viewIdButton = r.idFileDataUrl
+              ? `<button class="action-btn" data-action="view-id" data-ref="${r.ref||''}" title="View ID">🖼️</button>`
+              : '';
+            const actions = `<div class="actions-cell">${viewIdButton}<button class="action-btn" data-action="view" data-ref="${r.ref||''}" title="View">👁️</button><button class="action-btn" data-action="download" data-ref="${r.ref||''}" title="Download">⬇️</button><button class="action-btn" data-action="delete" data-ref="${r.ref||''}" title="Delete">🗑️</button></div>`;
             return `<tr data-ref="${r.ref||''}"><td>${r.ref||''}</td><td>${r.name||''}</td><td>${r.dateRequested||''}</td><td>${r.validUntil||''}</td><td>${statusHtml}</td><td>${pdfHtml}</td><td>${actions}</td></tr>`;
           }).join('');
         }
@@ -539,6 +558,15 @@
         function openApply(){ if(applyModal){ applyModal.hidden = false; applyModal.classList.add('open'); const f = applyModal.querySelector('input[name="fullName"]'); if(f) f.focus(); } }
         function closeApply(){ if(applyModal){ applyModal.hidden = true; applyModal.classList.remove('open'); } }
 
+        function readFileAsDataURL(file){
+          return new Promise((resolve,reject)=>{
+            const reader = new FileReader();
+            reader.onload = ()=>resolve(reader.result);
+            reader.onerror = ()=>reject(new Error('Unable to read file'));
+            reader.readAsDataURL(file);
+          });
+        }
+
         if(applyBtn) applyBtn.addEventListener('click', (e)=>{
           e.preventDefault();
           editingRef = null;
@@ -547,9 +575,36 @@
             const fd = applyForm.elements;
             if (fd.fullName) fd.fullName.value = String(user?.fullname || user?.name || user?.username || '').trim();
             if (fd.email) fd.email.value = String(user?.email || '').trim();
+            if (fd.idfile) fd.idfile.value = '';
+            const preview = document.getElementById('idPreview');
+            if (preview) preview.style.display = 'none';
           }
           openApply();
         });
+
+        const idFileInput = document.querySelector('#applyForm input[name="idfile"]');
+        const idPreview = document.getElementById('idPreview');
+        const idPreviewImage = document.getElementById('idPreviewImage');
+
+        if(idFileInput){
+          idFileInput.addEventListener('change', async () => {
+            const file = idFileInput.files && idFileInput.files[0];
+            if (!file) {
+              if(idPreview) idPreview.style.display = 'none';
+              return;
+            }
+            if (!file.type.startsWith('image/')) {
+              alert('Please upload an image file for your valid ID.');
+              idFileInput.value = '';
+              if(idPreview) idPreview.style.display = 'none';
+              return;
+            }
+            const dataUrl = await readFileAsDataURL(file);
+            if(idPreviewImage){ idPreviewImage.src = dataUrl; }
+            if(idPreview){ idPreview.style.display = 'block'; }
+          });
+        }
+
         if(applyModalClose) applyModalClose.addEventListener('click', closeApply);
         if(applyCancel) applyCancel.addEventListener('click', closeApply);
         if(applyModal) applyModal.addEventListener('click',(e)=>{ if(e.target===applyModal) closeApply(); });
@@ -793,14 +848,18 @@
             const fd = applyForm.elements;
             const fullName = String(fd.fullName.value || '').trim();
             const email = String(fd.email?.value || '').trim().toLowerCase();
-            const address = String(fd.address.value || '').trim();
+            const address = String(fd.address?.value || '').trim();
             const age = String(fd.age?.value || '').trim();
             const contact = String(fd.contact?.value || '').trim();
             const purpose = String(fd.purpose.value || '').trim();
             const purposeReason = String(fd.purposeReason?.value || '').trim();
+            const idFileInput = fd.idfile;
+            const idFile = idFileInput && idFileInput.files && idFileInput.files[0];
 
             if(!fullName || !email || !address || !age || !contact || !purpose || !purposeReason){ alert('Please complete required fields.'); return; }
             if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('Please enter a valid email address.'); return; }
+            if(!idFile && !editingRef){ alert('Please upload a photo of your valid ID.'); return; }
+            if(idFile && !idFile.type.startsWith('image/')){ alert('Please upload an image file for your valid ID.'); return; }
 
             const allRequests = readAllRequests();
             const now = new Date();
@@ -818,6 +877,11 @@
                 allRequests[idx].purposeReason = purposeReason;
                 allRequests[idx].contact = contact;
                 allRequests[idx].ownerKey = currentUserKey;
+                if(idFile){
+                  allRequests[idx].idFileName = idFile.name;
+                  allRequests[idx].idFileType = idFile.type;
+                  allRequests[idx].idFileDataUrl = await readFileAsDataURL(idFile);
+                }
                 // keep status unchanged
               }
               editingRef = null;
@@ -831,6 +895,7 @@
             const ref = 'BR' + now.getTime();
             const dateRequested = now.toISOString().split('T')[0];
             const validUntil = new Date(now.getFullYear()+1, now.getMonth(), now.getDate()).toISOString().split('T')[0];
+            const idDataUrl = idFile ? await readFileAsDataURL(idFile) : null;
             const newReq = {
               ref: ref,
               name: fullName,
@@ -843,7 +908,10 @@
               purpose: purpose,
               purposeReason: purposeReason,
               contact: contact,
-              ownerKey: currentUserKey
+              ownerKey: currentUserKey,
+              idFileName: idFile ? idFile.name : null,
+              idFileType: idFile ? idFile.type : null,
+              idFileDataUrl: idDataUrl
             };
             allRequests.unshift(newReq);
             writeAllRequests(allRequests);
@@ -862,7 +930,10 @@
           const ref = btn.getAttribute('data-ref');
           const allRequests = readAllRequests();
           const req = allRequests.find(r=>r.ref === ref && requestBelongsToCurrentUser(r));
-          if(action === 'view'){
+          if(action === 'view-id'){
+            if(!req) return;
+            openViewIdModal(req);
+          } else if(action === 'view'){
             if(!req) return;
             openCertificateWithRequest(req);
           } else if(action === 'download'){
@@ -873,6 +944,29 @@
             writeAllRequests(newList); showToast('Request deleted', {duration:2000}); refreshDashboardFromRequests(newList);
           }
         });
+
+        const viewIdModal = document.getElementById('viewIdModal');
+        const viewIdModalClose = document.getElementById('viewIdModalClose');
+        const viewIdImage = document.getElementById('viewIdImage');
+        const viewIdCaption = document.getElementById('viewIdCaption');
+
+        function openViewIdModal(req){
+          if(!req || !req.idFileDataUrl){
+            alert('No uploaded ID image is available for this request.');
+            return;
+          }
+          if(viewIdImage){ viewIdImage.src = req.idFileDataUrl; }
+          if(viewIdCaption){ viewIdCaption.textContent = req.idFileName || 'Uploaded valid ID'; }
+          if(viewIdModal){ viewIdModal.hidden = false; viewIdModal.classList.add('open'); }
+        }
+
+        function closeViewIdModal(){
+          if(viewIdModal){ viewIdModal.hidden = true; viewIdModal.classList.remove('open'); }
+          if(viewIdImage){ viewIdImage.src = ''; }
+        }
+
+        if(viewIdModalClose) viewIdModalClose.addEventListener('click', closeViewIdModal);
+        if(viewIdModal) viewIdModal.addEventListener('click', (e)=>{ if(e.target === viewIdModal) closeViewIdModal(); });
 
         // view modal close
         const viewModal = document.getElementById('viewModal');

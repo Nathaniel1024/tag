@@ -84,10 +84,11 @@ html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe 
 }
 
 /* Modal styles */
-.modal-overlay{position:fixed;inset:0;background:rgba(2,6,23,0.6);display:none;align-items:center;justify-content:center;z-index:60}
-.modal-overlay.open{display:flex}
-.modal{background:#fff;border-radius:10px;max-width:720px;width:95%;padding:1rem 1.25rem;position:relative;box-shadow:0 10px 30px rgba(2,6,23,0.2)}
-.modal-close{position:absolute;right:10px;top:8px;border:0;background:transparent;font-size:1.1rem}
+.modal-overlay{position:fixed;inset:0;background:rgba(2,6,23,0.55);display:none;align-items:center;justify-content:center;z-index:60}
+.modal-overlay.open{display:flex;animation:fadeIn .16s ease both}
+.modal{background:#fff;border-radius:14px;max-width:520px;width:92%;padding:1.25rem 1.5rem;position:relative;box-shadow:0 30px 70px rgba(2,6,23,0.18);transform:translateY(8px);opacity:0;transition:transform .18s ease,opacity .18s ease}
+.modal-overlay.open .modal{transform:translateY(0);opacity:1}
+.modal-close{position:absolute;right:12px;top:10px;border:0;background:transparent;font-size:1.1rem}
 .modal-header h2{margin:0 0 .5rem}
 .modal-body{max-height:70vh;overflow:auto;padding-bottom:1rem}
 .modal-form{margin:0}
@@ -137,6 +138,12 @@ html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe 
 /* fieldset grid: two column layout for larger screens */
 .modal-form fieldset{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
 .modal-form label.full{grid-column:1 / -1}
+
+/* simple fade in animation for modals */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .modal-form label.half{grid-column:auto}
 
 /* input-with-toggle (eye icon) */
@@ -174,40 +181,41 @@ html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe 
 /* =============================
    Admin (Landing + Login Modal)
    ============================= */
-body.admin-page{background:#ffffff}
-body.admin-page .admin-landing{min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:1.25rem 1rem}
-body.admin-page .admin-card{width:100%;max-width:420px;text-align:center;padding-top:1.25rem}
-body.admin-page .admin-logo-wrap{display:flex;align-items:center;justify-content:center;margin:1.35rem 0 .75rem}
-body.admin-page .admin-logo{width:98px;height:auto}
-body.admin-page .admin-title{margin:.25rem 0 0;font-size:1.25rem;font-weight:800;color:#111827}
-body.admin-page .admin-sub{margin:.25rem 0 1.1rem;color:#6b7280;font-size:.98rem}
-body.admin-page .admin-sub .down{display:inline-block;margin-right:.35rem;color:#111827}
+body.admin-page{background:linear-gradient(180deg,#f8fbff 0%,#f1f5f9 100%);color:#111827}
+body.admin-page .admin-landing{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2.5rem 1rem}
+body.admin-page .admin-card{width:100%;max-width:520px;text-align:center;padding:2.25rem 2rem 1.75rem;border-radius:32px;background:rgba(255,255,255,.98);box-shadow:0 40px 90px rgba(15,23,42,.12);border:1px solid rgba(148,163,184,.18)}
+body.admin-page .admin-logo-wrap{display:flex;align-items:center;justify-content:center;margin:0 auto 1.4rem;width:fit-content;padding:1rem;border-radius:24px;background:rgba(37,99,235,.08)}
+body.admin-page .admin-logo{width:96px;height:auto}
+body.admin-page .admin-title{margin:.2rem 0 0;font-size:2rem;font-weight:900;line-height:1.05;color:#0f172a}
+body.admin-page .admin-sub{margin:.75rem auto 1.5rem;color:#475569;font-size:1rem;max-width:390px;line-height:1.7}
+body.admin-page .admin-sub .down{display:inline-block;margin-right:.35rem;color:#0f172a}
 
-body.admin-page .admin-actions{display:flex;flex-direction:column;gap:.85rem;margin:1rem 0 1.15rem;align-items:center}
-body.admin-page .admin-action-btn{width:100%;max-width:340px;padding:1rem 1.1rem;border-radius:8px;border:0;font-weight:800;cursor:pointer}
-body.admin-page .admin-action-btn.residents{background:#b08a00;color:#fff;box-shadow:0 12px 24px rgba(176,138,0,.14)}
-body.admin-page .admin-action-btn.barangay{background:#1665d8;color:#fff;box-shadow:0 12px 24px rgba(22,101,216,.14)}
+body.admin-page .admin-actions{display:grid;gap:1rem;margin:1.5rem auto 1.5rem;max-width:380px}
+body.admin-page .admin-action-btn{width:100%;padding:1.05rem 1.25rem;border-radius:18px;border:0;font-weight:800;font-size:1rem;cursor:pointer;transition:transform .2s ease,box-shadow .2s ease}
+body.admin-page .admin-action-btn:hover{transform:translateY(-1px)}
+body.admin-page .admin-action-btn.residents{background:#f59e0b;color:#fff;box-shadow:0 18px 28px rgba(245,158,11,.22)}
+body.admin-page .admin-action-btn.barangay{background:#2563eb;color:#fff;box-shadow:0 18px 28px rgba(37,99,235,.22)}
 
-body.admin-page .admin-footer{font-size:.92rem;color:#374151;line-height:1.35;max-width:360px;margin:0 auto}
-body.admin-page .admin-footer a{color:#1d4ed8;text-decoration:none}
+body.admin-page .admin-footer{font-size:.95rem;color:#64748b;line-height:1.75;max-width:420px;margin:0 auto}
+body.admin-page .admin-footer a{color:#2563eb;text-decoration:none}
 body.admin-page .admin-footer a:hover{text-decoration:underline}
 body.admin-page .admin-back{position:fixed;left:12px;top:12px;border:0;background:transparent;font-size:1.35rem;cursor:pointer;color:#111827}
 
 /* Admin login modal (Barangay) */
 body.admin-page #adminLoginModal.open{display:flex}
-body.admin-page #adminLoginModal .modal{max-width:520px;width:96%;padding:0;border-radius:14px;overflow:hidden;box-shadow:0 18px 50px rgba(2,6,23,.25)}
-body.admin-page #adminLoginModal .modal-close{position:absolute;right:14px;top:12px;color:#fff;background:transparent;border:0;font-size:1.1rem;cursor:pointer}
-body.admin-page #adminLoginModal .admin-login-header{background:linear-gradient(180deg,#1976d2 0%, #57a5ff 45%, #8bc34a 100%);color:#fff;padding:1.1rem 1.25rem 1.25rem;position:relative}
-body.admin-page #adminLoginModal .admin-login-header .logo{width:64px;height:auto;display:block;margin:0 auto .4rem}
-body.admin-page #adminLoginModal .admin-login-header h2{margin:.1rem 0 0;text-align:center;font-size:2rem;letter-spacing:.02em}
-body.admin-page #adminLoginModal .admin-login-header p{margin:.25rem 0 0;text-align:center;opacity:.95}
-body.admin-page #adminLoginModal .admin-login-body{background:#fff;padding:1.1rem 1.25rem 1.25rem}
-body.admin-page #adminLoginModal .admin-field{margin:.75rem 0;text-align:left}
-body.admin-page #adminLoginModal label{display:block;font-weight:700;color:#111827;margin-bottom:.35rem}
-body.admin-page #adminLoginModal input{width:100%;box-sizing:border-box;padding:.9rem 1rem;border-radius:12px;border:0;background:#eef2f7}
-body.admin-page #adminLoginModal input:focus{outline:none;box-shadow:0 8px 22px rgba(11,102,195,.14)}
-body.admin-page #adminLoginModal .admin-login-btn{width:100%;margin-top:.9rem;padding:1rem;border-radius:12px;border:0;background:#1976d2;color:#fff;font-weight:900;font-size:1.2rem;cursor:pointer}
-body.admin-page #adminLoginModal .admin-login-note{margin:.75rem 0 0;text-align:center;color:#6b7280;font-size:.92rem}
+body.admin-page #adminLoginModal .modal{max-width:520px;width:96%;padding:0;border-radius:28px;overflow:hidden;box-shadow:0 30px 70px rgba(15,23,42,.18)}
+body.admin-page #adminLoginModal .modal-close{position:absolute;right:16px;top:14px;color:#fff;background:transparent;border:0;font-size:1.1rem;cursor:pointer;z-index:2}
+body.admin-page #adminLoginModal .admin-login-header{background:linear-gradient(180deg,#2563eb 0%,#6366f1 45%,#22c55e 100%);color:#fff;padding:1.4rem 1.5rem 1.5rem;position:relative}
+body.admin-page #adminLoginModal .admin-login-header .logo{width:72px;height:auto;display:block;margin:0 auto .7rem}
+body.admin-page #adminLoginModal .admin-login-header h2{margin:.2rem 0 0;text-align:center;font-size:2.2rem;letter-spacing:.02em}
+body.admin-page #adminLoginModal .admin-login-header p{margin:.45rem 0 0;text-align:center;opacity:.95;line-height:1.6}
+body.admin-page #adminLoginModal .admin-login-body{background:#fff;padding:1.25rem 1.5rem 1.5rem}
+body.admin-page #adminLoginModal .admin-field{margin:.85rem 0;text-align:left}
+body.admin-page #adminLoginModal label{display:block;font-weight:700;color:#0f172a;margin-bottom:.45rem}
+body.admin-page #adminLoginModal input{width:100%;box-sizing:border-box;padding:1rem 1rem;border-radius:14px;border:1px solid #e2e8f0;background:#f8fafc}
+body.admin-page #adminLoginModal input:focus{outline:none;box-shadow:0 0 0 4px rgba(37,99,235,.12);border-color:#93c5fd}
+body.admin-page #adminLoginModal .admin-login-btn{width:100%;margin-top:1rem;padding:1rem;border-radius:14px;border:0;background:#1d4ed8;color:#fff;font-weight:900;font-size:1.1rem;cursor:pointer;box-shadow:0 16px 28px rgba(37,99,235,.18)}
+body.admin-page #adminLoginModal .admin-login-note{margin:.85rem 0 0;text-align:center;color:#64748b;font-size:.95rem}
 
 /* =============================
    Admin Barangay Dashboard

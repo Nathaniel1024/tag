@@ -669,6 +669,53 @@
       list.innerHTML = html;
     }
 
+    // Render all requests (not only unseen) in the notification panel
+    function renderAllNotifPanel(items) {
+      const list = document.getElementById('notifList');
+      if (!list) return;
+
+      if (!items.length) {
+        list.innerHTML = '<div style="padding:.85rem;color:#6b7280;font-size:.92rem;">No requests.</div>';
+        return;
+      }
+
+      const html = items
+        .slice()
+        .sort((a, b) => String(b.ref || '').localeCompare(String(a.ref || '')))
+        .map((r) => {
+          const name = String(r.name || 'Resident').trim() || 'Resident';
+          const date = formatNotifDate(r.dateRequested || r.date);
+          const ref = String(r.ref || '').trim();
+          const status = String(r.status || '').trim();
+          return '<div style="padding:.65rem .7rem;border-radius:10px;border:1px solid #eef2f7;background:#fff;margin:.35rem;display:flex;justify-content:space-between;align-items:center">'
+            + '<div>'
+              + '<div style="font-size:.86rem;font-weight:700;color:#111827;">' + name + '</div>'
+              + '<div style="font-size:.8rem;color:#4b5563;margin-top:.2rem;">Ref: ' + ref + '</div>'
+              + '<div style="font-size:.78rem;color:#6b7280;">' + date + '</div>'
+            + '</div>'
+            + '<div style="text-align:right">'
+              + '<div style="font-size:.82rem;color:#374151;margin-bottom:.4rem;">' + (status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Pending') + '</div>'
+              + '<div><button type="button" class="btn-mini print" data-ref="' + ref + '" style="font-size:.75rem;padding:.25rem .5rem;border-radius:6px">Open</button></div>'
+            + '</div>'
+          + '</div>';
+        })
+        .join('');
+
+      list.innerHTML = html;
+
+      // Attach handlers for Open buttons (delegated)
+      Array.from(list.querySelectorAll('button[data-ref]')).forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          const ref = btn.getAttribute('data-ref');
+          if (!ref) return;
+          const req = getRequestByRef(ref);
+          if (!req) return alert('Request not found.');
+          // open email modal for that request (reuse existing)
+          openEmailModal(ref);
+        });
+      });
+    }
+
     function renderNotifBadge(count) {
       const badge = document.getElementById('notifBadge');
       if (!badge) return;
@@ -1184,6 +1231,10 @@
         notifPanel.hidden = !willOpen;
         notifBellBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         if (willOpen) {
+          // show all requests when opening the dropdown so the user can browse history
+          const all = loadRequests();
+          renderAllNotifPanel(all);
+          // mark current ones as seen (updates badge)
           markAllCurrentRequestsAsSeen();
         }
       });
@@ -1312,7 +1363,7 @@
         console.error('Logout error:', err);
       }
 
-      window.location.replace('/');
+      window.location.replace('/loginadmin');
     });
 
     window.addEventListener('pageshow', (event) => {

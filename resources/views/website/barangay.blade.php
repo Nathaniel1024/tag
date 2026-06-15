@@ -204,14 +204,18 @@
         submitBtn.disabled = true;
         submitBtn.textContent = 'Saving...';
 
-        const res = await fetch('/api/officers/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(data)
-        });
+          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+          const res = await fetch('/api/officers/register', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'X-CSRF-TOKEN': csrfToken,
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(data)
+          });
         let body = {};
         try {
           body = await res.json();
