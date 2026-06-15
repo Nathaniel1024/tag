@@ -269,7 +269,12 @@ Siguraduhing palitan agad ang password na ito pagkatapos mong makapasok para map
         body: JSON.stringify(payload)
       });
 
-      const data = await response.json().catch(() => ({}));
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (e) {
+        data = {};
+      }
       if (!response.ok) {
         throw new Error(data.message || 'Unable to send mail.');
       }
@@ -413,7 +418,12 @@ Siguraduhing palitan agad ang password na ito pagkatapos mong makapasok para map
           })
         });
 
-        const data = await response.json().catch(() => ({}));
+        let data = {};
+        try {
+          data = await response.json();
+        } catch (e) {
+          data = {};
+        }
         if (!response.ok) {
           throw new Error(data.message || 'Unable to change password.');
         }

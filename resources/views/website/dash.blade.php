@@ -844,7 +844,12 @@
           body: JSON.stringify(payload)
         });
 
-        const data = await response.json().catch(() => ({}));
+        let data = {};
+        try {
+          data = await response.json();
+        } catch (e) {
+          data = {};
+        }
         if (!response.ok) {
           throw new Error(data.message || 'Unable to send email.');
         }

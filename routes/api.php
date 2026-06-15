@@ -10,8 +10,14 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
-Route::get('/officers', [OfficerController::class, 'index']);
-Route::post('/officers/register', [OfficerController::class, 'register']);
+Route::middleware(['web'])->group(function () {
+    Route::get('/officers', [OfficerController::class, 'index']);
+    Route::post('/officers/login', [OfficerController::class, 'login']);
+    Route::post('/officers/register', [OfficerController::class, 'register']);
+    Route::delete('/officers/{id}', [OfficerController::class, 'destroy']);
+    Route::post('/officers/update-last-seen', [OfficerController::class, 'updateLastSeen']);
+    Route::put('/officers/{id}/password', [OfficerController::class, 'updatePassword']);
+});
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);

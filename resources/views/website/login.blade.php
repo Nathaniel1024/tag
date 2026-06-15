@@ -127,7 +127,12 @@
           body: JSON.stringify({ email })
         });
 
-        const body = await res.json().catch(() => ({}));
+        let body = {};
+        try {
+          body = await res.json();
+        } catch (e) {
+          body = {};
+        }
         if (!res.ok) {
           forgotMessage.style.display = 'block';
           forgotMessage.style.color = '#dc2626';
@@ -184,7 +189,12 @@
           body: JSON.stringify({ email, password: pw })
         });
 
-        const body = await res.json().catch(() => ({}));
+        let body = {};
+        try {
+          body = await res.json();
+        } catch (e) {
+          body = {};
+        }
 
         if (!res.ok) {
           alert(body.message || 'Login failed.');

@@ -212,7 +212,12 @@
           },
           body: JSON.stringify(data)
         });
-        const body = await res.json().catch(() => ({}));
+        let body = {};
+        try {
+          body = await res.json();
+        } catch (e) {
+          body = {};
+        }
         if(res.ok){
           msgSuccess.textContent = 'Staff account created successfully!';
           msgSuccess.style.display = 'block';

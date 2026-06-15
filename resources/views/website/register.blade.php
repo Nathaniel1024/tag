@@ -126,7 +126,12 @@
           body: formData
         });
 
-        const body = await res.json().catch(() => ({}));
+        let body = {};
+        try {
+          body = await res.json();
+        } catch (e) {
+          body = {};
+        }
         if (!res.ok) {
           let msg = body.message || 'Registration failed.';
           if (body.errors && typeof body.errors === 'object') {
