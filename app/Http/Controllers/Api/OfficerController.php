@@ -155,9 +155,14 @@ class OfficerController extends Controller
                 return $officer;
             });
 
-        return response()->json([
-            'data' => $officers,
-        ]);
+            return response()->json([
+                'data' => $officers,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to load officers: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function updateLastSeen(Request $request)
