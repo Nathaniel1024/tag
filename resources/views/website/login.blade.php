@@ -6,7 +6,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}" />
   <title>Login - DIGIBARANGAY</title>
   <link rel="icon" type="image/png" href="{{ asset('img/logo_zed.png') }}" />
-  <link rel="stylesheet" href="{{asset('css/styles.css')}}" />
+  <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body class="login-page">
   <header class="site-header">
