@@ -68,6 +68,8 @@ Route::get('/docs', function () {
 });
 Route::get('/clearance-requests', [ClearanceRequestController::class, 'index']);
 Route::post('/clearance-requests', [ClearanceRequestController::class, 'store']);
+Route::patch('/clearance-requests/{ref}', [ClearanceRequestController::class, 'update']);
+Route::delete('/clearance-requests/{ref}', [ClearanceRequestController::class, 'destroy']);
 Route::get('/clearance-requests/{ref}/image', [ClearanceRequestController::class, 'image'])->name('clearance-requests.image');
 Route::post('/docs/certificate-pdf', [WebsiteController::class, 'downloadCertificatePdf']);
 Route::get('/loginadmin', function () {

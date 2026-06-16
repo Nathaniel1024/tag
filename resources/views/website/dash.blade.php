@@ -247,25 +247,25 @@
 </div>
 
   <script>
-    const STORAGE_KEY = 'digibarangay_requests';
     const CERT_AUTOFILL_KEY = 'digibarangay_cert_autofill';
     const TEMPLATE_OVERRIDE_KEY = 'digibarangay_cert_template_override_v1';
     const GLOBAL_CLEARANCE_TEMPLATE_KEY = 'digibarangay_saved_clearance_template_v1';
     const EMAIL_BOOK_KEY = 'digibarangay_request_email_book_v1';
     const NOTIF_SEEN_KEY = 'digibarangay_seen_request_refs_v1';
+    let requestCache = [];
+    let hasInitializedRequests = false;
 
     function readGlobalClearanceTemplate() {
       return safeJsonParse(localStorage.getItem(GLOBAL_CLEARANCE_TEMPLATE_KEY), null);
     }
 
+    function setRequests(next) {
+      requestCache = Array.isArray(next) ? next : [];
+      return requestCache;
+    }
+
     function loadRequests() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const arr = raw ? JSON.parse(raw) : [];
-        return Array.isArray(arr) ? arr : [];
-      } catch {
-        return [];
-      }
+      return requestCache.slice();
     }
 
     function statusBadge(status) {
@@ -619,13 +619,11 @@
       const normalizedEmail = String(email || '').trim();
       if (!looksLikeEmail(normalizedEmail)) return;
 
-      const all = loadRequests();
-      const target = all.find((r) => String(r.ref) === String(ref));
+      const target = requestCache.find((r) => String(r.ref) === String(ref));
       if (!target) return;
 
       target.email = normalizedEmail;
       if (!target.userEmail) target.userEmail = normalizedEmail;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
       saveEmailToBook(target, normalizedEmail);
     }
 
@@ -960,16 +958,17 @@
       });
     }
     if (deleteOkBtn) {
-      deleteOkBtn.addEventListener('click', () => {
+      deleteOkBtn.addEventListener('click', async () => {
         if (!selectedDeleteRef) return;
-
-        const next = loadRequests().filter(r => String(r.ref) !== String(selectedDeleteRef));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-
-        calcStats(next);
-        renderTable(next);
-        updateNotifications(next);
-        closeDeleteModal();
+        deleteOkBtn.disabled = true;
+        try {
+          const deleted = await deleteRequestByRef(selectedDeleteRef);
+          if (deleted) {
+            closeDeleteModal();
+          }
+        } finally {
+          deleteOkBtn.disabled = false;
+        }
       });
     }
 
@@ -1069,11 +1068,46 @@
       }).join('');
     }
 
-    function updateStatusByRef(requests, ref, nextStatus) {
-      const idx = requests.findIndex(r => String(r.ref) === String(ref));
-      if (idx === -1) return false;
-      requests[idx].status = nextStatus;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
+    async function updateStatusByRef(ref, nextStatus) {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      const response = await fetch('/clearance-requests/' + encodeURIComponent(ref), {
+        method: 'PATCH',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.message || 'Failed to update request status.');
+      }
+
+      return response.json().catch(() => ({}));
+    }
+
+    async function deleteRequestByRef(ref) {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      const response = await fetch('/clearance-requests/' + encodeURIComponent(ref), {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: {
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.message || 'Failed to delete request.');
+      }
+
+      await syncRequestsFromServer();
       return true;
     }
 
@@ -1265,7 +1299,7 @@
       }, 300);
     }
 
-    const requests = loadRequests();
+    let requests = [];
 
     function normalizeServerRequest(request) {
       if (!request || typeof request !== 'object') return null;
@@ -1301,22 +1335,36 @@
         const serverRequests = Array.isArray(result.data)
           ? result.data.map(normalizeServerRequest).filter(Boolean)
           : [];
-        if (!serverRequests.length) return;
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(serverRequests));
-        knownRefSet = new Set(serverRequests.map((item) => String(item?.ref || '').trim()).filter(Boolean));
-        calcStats(serverRequests);
-        renderTable(serverRequests);
-        updateNotifications(serverRequests);
+        const previousRefs = knownRefSet;
+        const nextRefs = new Set(serverRequests.map((item) => String(item?.ref || '').trim()).filter(Boolean));
+        const newItems = hasInitializedRequests
+          ? serverRequests.filter((item) => {
+              const ref = String(item?.ref || '').trim();
+              return ref && !previousRefs.has(ref);
+            })
+          : [];
+
+        requests = setRequests(serverRequests);
+        knownRefSet = nextRefs;
+        hasInitializedRequests = true;
+        if (!localStorage.getItem(NOTIF_SEEN_KEY)) {
+          writeSeenRefs(knownRefSet);
+        }
+        calcStats(requests);
+        renderTable(requests);
+        if (newItems.length) {
+          updateNotifications(requests, { toastNew: true, newItems });
+        } else {
+          updateNotifications(requests);
+        }
       } catch (error) {
         console.warn('Unable to sync clearance requests from server', error);
       }
     }
 
+    requests = setRequests(requests);
     knownRefSet = new Set(requests.map((r) => String(r?.ref || '').trim()).filter(Boolean));
-    if (!localStorage.getItem(NOTIF_SEEN_KEY)) {
-      writeSeenRefs(knownRefSet);
-    }
 
     calcStats(requests);
     renderTable(requests);
@@ -1349,52 +1397,34 @@
       });
     }
 
-    function detectNewRequestsAndNotify() {
-      const nowRequests = loadRequests();
-      const nowSet = new Set(nowRequests.map((r) => String(r?.ref || '').trim()).filter(Boolean));
-      const newItems = nowRequests.filter((r) => {
-        const ref = String(r?.ref || '').trim();
-        return ref && !knownRefSet.has(ref);
-      });
-
-      if (newItems.length) {
-        updateNotifications(nowRequests, { toastNew: true, newItems });
-      } else {
-        updateNotifications(nowRequests);
-      }
-
-      knownRefSet = nowSet;
-    }
-
-    window.addEventListener('storage', (event) => {
-      if (event.key !== STORAGE_KEY) return;
-      detectNewRequestsAndNotify();
-      calcStats(loadRequests());
-      renderTable(loadRequests());
+    window.addEventListener('pageshow', async () => {
+      await syncRequestsFromServer();
     });
 
-    setInterval(detectNewRequestsAndNotify, 5000);
+    setInterval(syncRequestsFromServer, 5000);
 
-    document.getElementById('rows').addEventListener('click', (e) => {
+    document.getElementById('rows').addEventListener('click', async (e) => {
       const btn = e.target.closest && e.target.closest('button[data-action]');
       if (!btn) return;
       const action = btn.getAttribute('data-action');
       const ref = btn.getAttribute('data-ref');
 
       if (action === 'approve') {
-        const all = loadRequests();
-        updateStatusByRef(all, ref, 'approved');
-        calcStats(loadRequests());
-        renderTable(loadRequests());
-        updateNotifications(loadRequests());
+        try {
+          await updateStatusByRef(ref, 'approved');
+          await syncRequestsFromServer();
+        } catch (err) {
+          alert(err.message || 'Unable to approve request.');
+        }
         return;
       }
       if (action === 'reject') {
-        const all = loadRequests();
-        updateStatusByRef(all, ref, 'rejected');
-        calcStats(loadRequests());
-        renderTable(loadRequests());
-        updateNotifications(loadRequests());
+        try {
+          await updateStatusByRef(ref, 'rejected');
+          await syncRequestsFromServer();
+        } catch (err) {
+          alert(err.message || 'Unable to reject request.');
+        }
         return;
       }
 

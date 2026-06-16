@@ -10,9 +10,21 @@ use Illuminate\Support\Str;
 
 class ClearanceRequestController extends Controller
 {
+    private function isAdmin(): bool
+    {
+        return session('admin_logged_in') === true && in_array(session('admin_role'), ['admin', 'official'], true);
+    }
+
+    private function forbidUnlessAdmin()
+    {
+        if (! $this->isAdmin()) {
+            abort(403, 'Forbidden');
+        }
+    }
+
     public function index(Request $request)
     {
-        $isAdmin = session('admin_logged_in') === true && in_array(session('admin_role'), ['admin', 'official'], true);
+        $isAdmin = $this->isAdmin();
 
         $query = ClearanceRequest::query()->latest('id');
 
@@ -42,6 +54,42 @@ class ClearanceRequestController extends Controller
 
         return response()->json([
             'data' => $requests,
+        ]);
+    }
+
+    public function update(Request $request, string $ref)
+    {
+        $this->forbidUnlessAdmin();
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:pending,approved,rejected'],
+        ]);
+
+        $clearanceRequest = ClearanceRequest::where('ref', $ref)->firstOrFail();
+        $clearanceRequest->status = $validated['status'];
+        $clearanceRequest->save();
+
+        return response()->json([
+            'message' => 'Request updated successfully.',
+            'request' => $this->transform($clearanceRequest->fresh()),
+        ]);
+    }
+
+    public function destroy(string $ref)
+    {
+        $this->forbidUnlessAdmin();
+
+        $clearanceRequest = ClearanceRequest::where('ref', $ref)->firstOrFail();
+        $filePath = $clearanceRequest->id_file_path;
+
+        if ($filePath && Storage::disk('local')->exists($filePath)) {
+            Storage::disk('local')->delete($filePath);
+        }
+
+        $clearanceRequest->delete();
+
+        return response()->json([
+            'message' => 'Request deleted successfully.',
         ]);
     }
 
