@@ -235,7 +235,7 @@
 
 <div id="requestImageModal" class="modal-overlay" hidden>
   <div class="modal" style="max-width:760px;">
-    <button class="modal-close" id="requestImageClose">âœ•</button>
+    <button class="modal-close" id="requestImageClose">X</button>
     <div class="modal-header">
       <h2>Uploaded ID Image</h2>
     </div>
