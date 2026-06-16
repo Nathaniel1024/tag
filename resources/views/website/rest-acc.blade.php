@@ -90,7 +90,7 @@
       <nav class="adm-nav" id="admSidebarNav" aria-label="Admin navigation">
         <a href="/dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
         <a href="/certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
-        <a href="/resident"><span class="ico">👥</span><span>Residents record</span></a>
+        <a href="/resident"><span class="ico">👥</span><span>Resident Records</span></a>
         <a class="active" href="/rest-acc"><span class="ico">🔐</span><span>Resident Accounts</span></a>
         @if ($isAdmin)
           <a href="/dashboard"><span class="ico">🧭</span><span>Admin Dashboard</span></a>
@@ -112,7 +112,7 @@
         </button>
         <div class="role">
           <strong>{{ session('admin_name', 'CHAIRMAN') }}</strong>
-          <span>{{ $isAdmin ? 'barangay admin' : 'barangay official' }}</span>
+          <span>{{ $isAdmin ? 'Barangay Admin' : 'Barangay Official' }}</span>
         </div>
       </header>
 

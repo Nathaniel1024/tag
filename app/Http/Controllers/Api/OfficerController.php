@@ -13,20 +13,12 @@ class OfficerController extends Controller
     public function login(Request $request)
     {
         $validated = $request->validate([
-            'login' => 'nullable|string|max:255',
-            'email' => 'nullable|string|max:255',
+            'email' => 'required|email|max:255',
             'password' => 'required|string',
         ]);
 
-        $loginRaw = $validated['login'] ?? $validated['email'] ?? '';
-        $loginValue = strtolower(trim((string) $loginRaw));
-        if ($loginValue === '') {
-            return response()->json([
-                'message' => 'Please enter username or email.'
-            ], 422);
-        }
-
-        $officer = $this->resolveOfficerByLogin($loginValue);
+        $email = strtolower(trim((string) $validated['email']));
+        $officer = BarangayOfficer::whereRaw('LOWER(email) = ?', [$email])->first();
         if (!$officer) {
             return response()->json([
                 'message' => 'Invalid credentials or account not found in the database.'
@@ -56,20 +48,12 @@ class OfficerController extends Controller
     public function loginAdmin(Request $request)
     {
         $validated = $request->validate([
-            'login' => 'nullable|string|max:255',
-            'email' => 'nullable|string|max:255',
+            'email' => 'required|email|max:255',
             'password' => 'required|string',
         ]);
 
-        $loginRaw = $validated['login'] ?? $validated['email'] ?? '';
-        $loginValue = strtolower(trim((string) $loginRaw));
-        if ($loginValue === '') {
-            return response()->json([
-                'message' => 'Please enter username or email.'
-            ], 422);
-        }
-
-        $officer = $this->resolveOfficerByLogin($loginValue);
+        $email = strtolower(trim((string) $validated['email']));
+        $officer = BarangayOfficer::whereRaw('LOWER(email) = ?', [$email])->first();
         if (!$officer) {
             return response()->json([
                 'message' => 'Invalid credentials or account not found in the database.'
@@ -107,20 +91,6 @@ class OfficerController extends Controller
                 'role' => $officer->role,
             ],
         ]);
-    }
-
-    private function resolveOfficerByLogin(string $loginValue): ?BarangayOfficer
-    {
-        $isEmailLogin = filter_var($loginValue, FILTER_VALIDATE_EMAIL) !== false;
-
-        if ($isEmailLogin) {
-            $officer = BarangayOfficer::whereRaw('LOWER(email) = ?', [$loginValue])->first();
-            if ($officer) {
-                return $officer;
-            }
-        }
-
-        return BarangayOfficer::whereRaw('LOWER(username) = ?', [$loginValue])->first();
     }
 
     private function verifyOfficerPassword(BarangayOfficer $officer, string $password): bool

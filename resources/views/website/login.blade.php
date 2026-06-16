@@ -8,7 +8,7 @@
   <link rel="icon" type="image/png" href="{{ asset('img/logo_zed.png') }}" />
   <link rel="stylesheet" href="{{asset('css/styles.css')}}" />
 </head>
-<body>
+<body class="login-page">
   <header class="site-header">
     <div class="container header-inner">
       <a class="brand" href="./home">
@@ -19,31 +19,63 @@
   </header>
 
   <main>
-    <section class="container form-section">
-      <h1>Resident Portal Login</h1>
-      <form action="{{ url('/resident/login') }}" method="POST" id="loginForm" novalidate>
-        @csrf
-        <label>Email address
-          <input name="email" type="email" placeholder="resident@example.com" required />
-        </label>
-        <label>Password
-          <input name="password" type="password" required />
-        </label>
-        <label class="inline"><input type="checkbox" id="remember" /> Remember me</label>
-        <div class="form-actions">
-          <button class="btn primary" type="submit">LOGIN</button>
-          <a class="btn" href="./register">REGISTER</a>
-          <a class="btn" href="./home">BACK</a>
+    <section class="container login-section">
+      <div class="login-shell">
+        <div class="login-brand-panel">
+          <div class="login-logo-wrap">
+            <img src="{{ asset('img/logo_zed.png') }}" alt="DIGIBARANGAY logo" class="login-logo" />
+          </div>
+          <p class="eyebrow">Resident Portal</p>
+          <h1>Sign in to your account</h1>
+          <p class="login-copy">
+            Access your clearance requests, updates, and resident services from one secure portal.
+          </p>
+          <div class="login-highlights" aria-hidden="true">
+            <span>Secure access</span>
+            <span>Resident records</span>
+            <span>Clearance tracking</span>
+          </div>
         </div>
-        <p class="muted"><a href="#" id="forgotPasswordLink">Forgot password</a></p>
-        <p class="muted">Security reminder: Do not share your login credentials.</p>
-      </form>
+
+        <div class="login-card">
+          <div class="login-card-top">
+            <img src="{{ asset('img/logo_zed.png') }}" alt="DIGIBARANGAY favicon" class="login-favicon" />
+            <div>
+              <p class="login-card-kicker">Welcome back</p>
+              <h2>Resident Login Portal</h2>
+            </div>
+          </div>
+
+          <form action="{{ url('/resident/login') }}" method="POST" id="loginForm" novalidate class="login-form">
+            @csrf
+            <label>
+              <span>Email address</span>
+              <input name="email" type="email" placeholder="resident@example.com" required autocomplete="email" />
+            </label>
+            <label>
+              <span>Password</span>
+              <input name="password" type="password" required autocomplete="current-password" />
+            </label>
+            <label class="inline remember-row">
+              <input type="checkbox" id="remember" />
+              <span>Remember me</span>
+            </label>
+            <div class="form-actions login-actions">
+              <button class="btn primary" type="submit">LOGIN</button>
+              <a class="btn" href="./register">REGISTER</a>
+              <a class="btn" href="./home">BACK</a>
+            </div>
+            <p class="muted login-link-row"><a href="#" id="forgotPasswordLink">Forgot password</a></p>
+            <p class="muted login-note">Security reminder: Do not share your login credentials.</p>
+          </form>
+        </div>
+      </div>
     </section>
   </main>
 
   <div id="forgotModal" class="modal-overlay" hidden>
     <div class="modal" style="max-width:430px;">
-      <button class="modal-close" id="forgotCloseBtn" type="button">✕</button>
+      <button class="modal-close" id="forgotCloseBtn" type="button" aria-label="Close">×</button>
       <div class="modal-header">
         <h2>Forgot Your Password?</h2>
       </div>
@@ -202,7 +234,7 @@
         }
 
         const loggedInUser = body.user || {};
-        const displayName = loggedInUser.fullname || loggedInUser.name || loggedInUser.username || email;
+        const displayName = loggedInUser.fullname || loggedInUser.name || loggedInUser.email || email;
         const displayEmail = loggedInUser.email || email;
         const normalizedUser = {
           id: loggedInUser.id || null,
@@ -214,8 +246,7 @@
           user_key: String(
             loggedInUser.id
             || loggedInUser.email
-            || loggedInUser.username
-            || displayEmail
+            || email
             || displayName
           ).trim().toLowerCase()
         };

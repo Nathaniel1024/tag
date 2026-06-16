@@ -88,7 +88,7 @@
           <div id="dashUserEmail" style="font-size:.9rem;opacity:.85"></div>
         </div>
         <div class="user-avatar" id="dashAvatar">JD</div>
-        <button id="logoutBtn" class="logout-icon" type="button" aria-label="Logout" title="Logout">
+        <button id="logoutBtn" class="logout-icon" type="button" aria-label="Logout" title="Logout" onclick="return window.handleResidentLogout(event)">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <path d="M16 17l5-5-5-5" />
@@ -289,18 +289,45 @@
           sessionStorage.removeItem('digibarangay_user');
         }
 
+        window.handleResidentLogout = async function (event) {
+          if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+              event.stopImmediatePropagation();
+            }
+          }
+
+          const token = localStorage.getItem('authToken');
+          clearResidentAuthState();
+
+          try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers.Authorization = 'Bearer ' + token;
+            await fetch('/api/auth/logout', {
+              method: 'POST',
+              headers
+            });
+          } catch (err) {
+            console.error('Logout error:', err);
+          }
+
+          window.location.replace('/');
+          return false;
+        };
+
         function hasResidentSession() {
           return localStorage.getItem('digibarangay_logged_in') === '1';
         }
 
         if (!hasResidentSession()) {
-          window.location.replace('/login');
+          window.location.replace('/');
           return;
         }
 
         window.addEventListener('pageshow', function () {
           if (!hasResidentSession()) {
-            window.location.replace('/login');
+            window.location.replace('/');
           }
         });
 
@@ -356,7 +383,11 @@
 
         function writeAllRequests(next){
           try { localStorage.setItem('digibarangay_requests', JSON.stringify(next)); }
-          catch(err){ console.error('save request', err); }
+          catch(err){
+            console.error('save request', err);
+            return false;
+          }
+          return true;
         }
 
         function normalizeRequestOwner(req){
@@ -365,6 +396,55 @@
             req.ownerKey = currentUserKey;
           }
           return req;
+        }
+
+        function normalizeServerRequest(request){
+          if(!request || typeof request !== 'object') return null;
+          return {
+            ref: String(request.ref || '').trim(),
+            name: String(request.name || '').trim(),
+            email: String(request.email || '').trim(),
+            address: String(request.address || '').trim(),
+            age: String(request.age ?? '').trim(),
+            dateRequested: String(request.dateRequested || '').trim(),
+            validUntil: String(request.validUntil || '').trim(),
+            status: String(request.status || 'pending').trim(),
+            purpose: String(request.purpose || '').trim(),
+            purposeReason: String(request.purposeReason || request.purpose_reason || '').trim(),
+            contact: String(request.contact || '').trim(),
+            ownerKey: String(request.ownerKey || request.owner_key || currentUserKey || '').trim(),
+            idFileName: String(request.idFileName || request.id_file_name || '').trim(),
+            idFileType: String(request.idFileType || request.id_file_mime || '').trim(),
+            idFileUrl: String(request.idFileUrl || request.id_file_url || '').trim(),
+            pdfSaved: !!request.pdfSaved,
+            savedTemplate: request.savedTemplate || null,
+          };
+        }
+
+        async function syncRequestsFromServer(){
+          try {
+            const params = new URLSearchParams();
+            if (currentUserKey) params.set('owner_key', currentUserKey);
+            if (user?.email) params.set('email', String(user.email).trim().toLowerCase());
+
+            const response = await fetch('/clearance-requests?' + params.toString(), {
+              headers: { 'Accept': 'application/json' },
+            });
+            if (!response.ok) return;
+
+            const result = await response.json().catch(() => ({}));
+            const serverRequests = Array.isArray(result.data)
+              ? result.data.map(normalizeServerRequest).filter(Boolean)
+              : [];
+            if (!serverRequests.length) return;
+
+            if (writeAllRequests(serverRequests)) {
+              requests = serverRequests.map(normalizeRequestOwner);
+              renderRequests(getFilteredRequests());
+            }
+          } catch (error) {
+            console.warn('Unable to sync clearance requests from server', error);
+          }
         }
         const nameEl = document.getElementById('dashUserName');
         const emailEl = document.getElementById('dashUserEmail');
@@ -418,7 +498,7 @@
               || !!globalTemplate
               ? ('<span class="status-badge status-approved">Saved</span>' + certTypeNote)
               : '<span class="status-badge status-pending">Not Saved</span>';
-            const viewIdButton = r.idFileDataUrl
+            const viewIdButton = (r.idFileUrl || r.idFileDataUrl)
               ? `<button class="action-btn" data-action="view-id" data-ref="${r.ref||''}" title="View ID">🖼️</button>`
               : '';
             const actions = `<div class="actions-cell">${viewIdButton}<button class="action-btn" data-action="view" data-ref="${r.ref||''}" title="View">👁️</button><button class="action-btn" data-action="download" data-ref="${r.ref||''}" title="Download">⬇️</button><button class="action-btn" data-action="delete" data-ref="${r.ref||''}" title="Delete">🗑️</button></div>`;
@@ -426,6 +506,7 @@
           }).join('');
         }
         renderRequests(requests);
+        syncRequestsFromServer();
         // search and filter controls
         const searchInput = document.getElementById('searchInput');
         const statusFilter = document.getElementById('statusFilter');
@@ -440,25 +521,6 @@
         }
         if(searchInput) searchInput.addEventListener('input', ()=>{ renderRequests(getFilteredRequests()); });
         if(statusFilter) statusFilter.addEventListener('change', ()=>{ renderRequests(getFilteredRequests()); });
-
-        document.getElementById('logoutBtn').addEventListener('click', async ()=>{
-          // Try backend logout endpoint when token exists.
-          const token = localStorage.getItem('authToken');
-          try {
-            await fetch('http://localhost:8000/api/auth/logout', {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
-              }
-            });
-          } catch (err) {
-            console.error('Logout error:', err);
-          }
-          // Always clear local auth state and force login page.
-          clearResidentAuthState();
-          window.location.replace('/login');
-        });
 
         // Profile modal wiring
         const profileInfo = document.getElementById('profileInfo');
@@ -484,7 +546,7 @@
 
         if(profileInfo) profileInfo.addEventListener('click', (e)=>{
           // Don't open modal if user clicked the logout button area
-          if(e.target.closest('#logoutBtn')) return;
+          if (e.target.closest('#logoutBtn')) return;
           e.preventDefault();
           if(changePasswordForm) changePasswordForm.reset();
           openChangePasswordModal();
@@ -554,6 +616,9 @@
         const applyModalClose = document.getElementById('applyModalClose');
         const applyCancel = document.getElementById('applyCancel');
         const applyForm = document.getElementById('applyForm');
+        const MAX_ID_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
+        const MAX_ID_IMAGE_STORE_BYTES = 850 * 1024;
+        const TARGET_ID_IMAGE_STORE_BYTES = 650 * 1024;
 
         function openApply(){ if(applyModal){ applyModal.hidden = false; applyModal.classList.add('open'); const f = applyModal.querySelector('input[name="fullName"]'); if(f) f.focus(); } }
         function closeApply(){ if(applyModal){ applyModal.hidden = true; applyModal.classList.remove('open'); } }
@@ -565,6 +630,118 @@
             reader.onerror = ()=>reject(new Error('Unable to read file'));
             reader.readAsDataURL(file);
           });
+        }
+
+        function blobToDataURL(blob){
+          return new Promise((resolve,reject)=>{
+            const reader = new FileReader();
+            reader.onload = ()=>resolve(String(reader.result || ''));
+            reader.onerror = ()=>reject(new Error('Unable to read image data.'));
+            reader.readAsDataURL(blob);
+          });
+        }
+
+        function blobToFile(blob, fileName, fileType) {
+          return new File([blob], fileName, { type: fileType || blob.type || 'application/octet-stream' });
+        }
+
+        function loadImageFromObjectUrl(objectUrl){
+          return new Promise((resolve,reject)=>{
+            const image = new Image();
+            image.onload = ()=>resolve(image);
+            image.onerror = ()=>reject(new Error('Unable to process image.'));
+            image.src = objectUrl;
+          });
+        }
+
+        async function compressUploadImageFile(file){
+          if (!file) return null;
+          if (!file.type.startsWith('image/')) return file;
+
+          const objectUrl = URL.createObjectURL(file);
+          try {
+            const image = await loadImageFromObjectUrl(objectUrl);
+            const attempts = [
+              { dimension: 1600, quality: 0.82 },
+              { dimension: 1200, quality: 0.72 },
+              { dimension: 1000, quality: 0.62 },
+              { dimension: 800, quality: 0.58 },
+            ];
+
+            let fallbackBlob = null;
+            for (const attempt of attempts) {
+              const scale = Math.min(1, attempt.dimension / Math.max(image.width || 1, image.height || 1));
+              const canvas = document.createElement('canvas');
+              canvas.width = Math.max(1, Math.round((image.width || 1) * scale));
+              canvas.height = Math.max(1, Math.round((image.height || 1) * scale));
+              const context = canvas.getContext('2d');
+              if (!context) continue;
+              context.fillStyle = '#ffffff';
+              context.fillRect(0, 0, canvas.width, canvas.height);
+              context.drawImage(image, 0, 0, canvas.width, canvas.height);
+              const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', attempt.quality));
+              if (!blob) continue;
+              fallbackBlob = blob;
+              if (blob.size <= 2 * 1024 * 1024) {
+                return blobToFile(blob, file.name.replace(/\.[^.]+$/, '') + '.jpg', 'image/jpeg');
+              }
+            }
+
+            if (fallbackBlob) {
+              return blobToFile(fallbackBlob, file.name.replace(/\.[^.]+$/, '') + '.jpg', 'image/jpeg');
+            }
+
+            return file;
+          } finally {
+            URL.revokeObjectURL(objectUrl);
+          }
+        }
+
+        async function prepareStoredIdImageDataUrl(file){
+          if (!file) return null;
+          if (file.size > MAX_ID_IMAGE_UPLOAD_BYTES) {
+            throw new Error('Please upload an image smaller than 10MB.');
+          }
+
+          const objectUrl = URL.createObjectURL(file);
+          try {
+            if (file.size <= MAX_ID_IMAGE_STORE_BYTES) {
+              return await blobToDataURL(file);
+            }
+
+            const image = await loadImageFromObjectUrl(objectUrl);
+            const attempts = [
+              { dimension: 1400, quality: 0.82 },
+              { dimension: 1100, quality: 0.72 },
+              { dimension: 900, quality: 0.62 },
+              { dimension: 700, quality: 0.55 },
+            ];
+
+            let fallbackBlob = null;
+            for (const attempt of attempts) {
+              const scale = Math.min(1, attempt.dimension / Math.max(image.width || 1, image.height || 1));
+              const canvas = document.createElement('canvas');
+              canvas.width = Math.max(1, Math.round((image.width || 1) * scale));
+              canvas.height = Math.max(1, Math.round((image.height || 1) * scale));
+              const context = canvas.getContext('2d');
+              if (!context) continue;
+              context.fillStyle = '#ffffff';
+              context.fillRect(0, 0, canvas.width, canvas.height);
+              context.drawImage(image, 0, 0, canvas.width, canvas.height);
+              const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', attempt.quality));
+              if (!blob) continue;
+              fallbackBlob = blob;
+              if (blob.size <= TARGET_ID_IMAGE_STORE_BYTES) {
+                return await blobToDataURL(blob);
+              }
+            }
+            if (fallbackBlob) {
+              return await blobToDataURL(fallbackBlob);
+            }
+            return await blobToDataURL(file);
+          } finally {
+            URL.revokeObjectURL(objectUrl);
+          }
         }
 
         if(applyBtn) applyBtn.addEventListener('click', (e)=>{
@@ -593,13 +770,19 @@
               if(idPreview) idPreview.style.display = 'none';
               return;
             }
-            if (!file.type.startsWith('image/')) {
+          if (!file.type.startsWith('image/')) {
               alert('Please upload an image file for your valid ID.');
               idFileInput.value = '';
               if(idPreview) idPreview.style.display = 'none';
               return;
             }
-            const dataUrl = await readFileAsDataURL(file);
+            if (file.size > MAX_ID_IMAGE_UPLOAD_BYTES) {
+              alert('Please upload an image smaller than 10MB.');
+              idFileInput.value = '';
+              if(idPreview) idPreview.style.display = 'none';
+              return;
+            }
+            const dataUrl = await prepareStoredIdImageDataUrl(file);
             if(idPreviewImage){ idPreviewImage.src = dataUrl; }
             if(idPreview){ idPreview.style.display = 'block'; }
           });
@@ -839,7 +1022,7 @@
         }
 
         if(applyForm){
-          applyForm.addEventListener('submit',(e)=>{
+          applyForm.addEventListener('submit', async (e)=>{
             e.preventDefault();
             if (!applyForm.checkValidity()) {
               applyForm.reportValidity();
@@ -860,6 +1043,7 @@
             if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('Please enter a valid email address.'); return; }
             if(!idFile && !editingRef){ alert('Please upload a photo of your valid ID.'); return; }
             if(idFile && !idFile.type.startsWith('image/')){ alert('Please upload an image file for your valid ID.'); return; }
+            if(idFile && idFile.size > MAX_ID_IMAGE_UPLOAD_BYTES){ alert('Please upload an image smaller than 10MB.'); return; }
 
             const allRequests = readAllRequests();
             const now = new Date();
@@ -880,12 +1064,15 @@
                 if(idFile){
                   allRequests[idx].idFileName = idFile.name;
                   allRequests[idx].idFileType = idFile.type;
-                  allRequests[idx].idFileDataUrl = await readFileAsDataURL(idFile);
+                  allRequests[idx].idFileUrl = allRequests[idx].idFileUrl || '';
                 }
                 // keep status unchanged
               }
               editingRef = null;
-              writeAllRequests(allRequests);
+              if (!writeAllRequests(allRequests)) {
+                alert('Unable to save this request. The uploaded image may be too large for browser storage. Please try a smaller image.');
+                return;
+              }
               closeApply();
               showToast('Application updated', {duration:2500});
               refreshDashboardFromRequests(allRequests);
@@ -895,33 +1082,75 @@
             const ref = 'BR' + now.getTime();
             const dateRequested = now.toISOString().split('T')[0];
             const validUntil = new Date(now.getFullYear()+1, now.getMonth(), now.getDate()).toISOString().split('T')[0];
-            const idDataUrl = idFile ? await readFileAsDataURL(idFile) : null;
+            const formData = new FormData();
+            formData.append('ref', ref);
+            formData.append('owner_key', currentUserKey);
+            formData.append('owner_name', String(user?.fullname || user?.name || user?.username || '').trim());
+            formData.append('owner_email', String(user?.email || email || '').trim());
+            formData.append('name', fullName);
+            formData.append('email', email);
+            formData.append('address', address);
+            formData.append('age', age);
+            formData.append('contact', contact);
+            formData.append('purpose', purpose);
+            formData.append('purpose_reason', purposeReason);
+            const uploadFile = await compressUploadImageFile(idFile);
+            formData.append('idfile', uploadFile, uploadFile?.name || idFile.name);
+
+            const submitResponse = await fetch('/clearance-requests', {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-Requested-With': 'XMLHttpRequest',
+              },
+              body: formData,
+            });
+
+            const submitResult = await submitResponse.json().catch(() => ({}));
+            if (!submitResponse.ok) {
+              alert(submitResult.message || 'Unable to submit this request.');
+              return;
+            }
+
+            const savedRequest = normalizeServerRequest(submitResult.request || {});
+            if (!savedRequest || !savedRequest.ref) {
+              alert('The request was saved, but the server response was incomplete.');
+              return;
+            }
+
             const newReq = {
-              ref: ref,
-              name: fullName,
-              email: email,
-              address: address,
-              age: age,
-              dateRequested: dateRequested,
-              validUntil: validUntil,
-              status: 'pending',
-              purpose: purpose,
-              purposeReason: purposeReason,
-              contact: contact,
-              ownerKey: currentUserKey,
-              idFileName: idFile ? idFile.name : null,
-              idFileType: idFile ? idFile.type : null,
-              idFileDataUrl: idDataUrl
+              ref: savedRequest.ref,
+              name: savedRequest.name || fullName,
+              email: savedRequest.email || email,
+              address: savedRequest.address || address,
+              age: savedRequest.age || age,
+              dateRequested: savedRequest.dateRequested || dateRequested,
+              validUntil: savedRequest.validUntil || validUntil,
+              status: savedRequest.status || 'pending',
+              purpose: savedRequest.purpose || purpose,
+              purposeReason: savedRequest.purposeReason || purposeReason,
+              contact: savedRequest.contact || contact,
+              ownerKey: savedRequest.ownerKey || currentUserKey,
+              idFileName: savedRequest.idFileName || (idFile ? idFile.name : null),
+              idFileType: savedRequest.idFileType || (idFile ? idFile.type : null),
+              idFileUrl: savedRequest.idFileUrl || '',
+              pdfSaved: !!savedRequest.pdfSaved
             };
             allRequests.unshift(newReq);
-            writeAllRequests(allRequests);
+            if (!writeAllRequests(allRequests)) {
+              alert('Unable to save this request locally.');
+              return;
+            }
             closeApply();
             // show success toast with reference
-            showToast(`Application Submitted successfully! <strong>${ref}</strong>`, {duration:4000});
+            showToast(`Application Submitted successfully! <strong>${savedRequest.ref}</strong>`, {duration:4000});
             // update UI immediately
             refreshDashboardFromRequests(allRequests);
+            syncRequestsFromServer();
           });
         }
+        window.__digibarangayApplySubmitBound = true;
         // view/delete/download handlers (delegated)
         document.getElementById('requestsBody').addEventListener('click',(e)=>{
           const btn = e.target.closest && e.target.closest('button[data-action]');
@@ -951,11 +1180,12 @@
         const viewIdCaption = document.getElementById('viewIdCaption');
 
         function openViewIdModal(req){
-          if(!req || !req.idFileDataUrl){
+          const imageSrc = req && (req.idFileUrl || req.idFileDataUrl);
+          if(!req || !imageSrc){
             alert('No uploaded ID image is available for this request.');
             return;
           }
-          if(viewIdImage){ viewIdImage.src = req.idFileDataUrl; }
+          if(viewIdImage){ viewIdImage.src = imageSrc; }
           if(viewIdCaption){ viewIdCaption.textContent = req.idFileName || 'Uploaded valid ID'; }
           if(viewIdModal){ viewIdModal.hidden = false; viewIdModal.classList.add('open'); }
         }
@@ -988,6 +1218,689 @@
         if(viewModalClose) viewModalClose.addEventListener('click', closeViewModal);
         if(viewModal) viewModal.addEventListener('click',(e)=>{ if(e.target === viewModal){ closeViewModal(); } });
       }catch(e){ console.error(e); }
+    })();
+  </script>
+  <script>
+    (function () {
+      function getStoredUser() {
+        const raw = localStorage.getItem('digibarangay_user') || localStorage.getItem('digibarangay_registered_user');
+        if (!raw) return null;
+        try {
+          return JSON.parse(raw);
+        } catch (_err) {
+          return { fullname: String(raw), name: String(raw), username: String(raw), email: '' };
+        }
+      }
+
+      function getUserDisplayName(user) {
+        return (user && (user.fullname || user.name || user.username || user.email)) || 'User Name';
+      }
+
+      function getUserKey(user) {
+        return String(user && (user.user_key || user.id || user.email || user.username || user.fullname || user.name) || '').trim().toLowerCase();
+      }
+
+      function readRequests() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem('digibarangay_requests') || '[]');
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (_err) {
+          return [];
+        }
+      }
+
+      function writeRequests(nextRequests) {
+        localStorage.setItem('digibarangay_requests', JSON.stringify(nextRequests));
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? '')
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#039;');
+      }
+
+      function readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error('Unable to read file.'));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function normalizeServerRequest(request) {
+        if (!request || typeof request !== 'object') return null;
+        return {
+          ref: String(request.ref || '').trim(),
+          name: String(request.name || '').trim(),
+          email: String(request.email || '').trim(),
+          address: String(request.address || '').trim(),
+          age: String(request.age ?? '').trim(),
+          dateRequested: String(request.dateRequested || '').trim(),
+          validUntil: String(request.validUntil || '').trim(),
+          status: String(request.status || 'pending').trim(),
+          purpose: String(request.purpose || '').trim(),
+          purposeReason: String(request.purposeReason || request.purpose_reason || '').trim(),
+          contact: String(request.contact || '').trim(),
+          ownerKey: String(request.ownerKey || request.owner_key || '').trim(),
+          idFileName: String(request.idFileName || request.id_file_name || '').trim(),
+          idFileType: String(request.idFileType || request.id_file_mime || '').trim(),
+          idFileUrl: String(request.idFileUrl || request.id_file_url || '').trim(),
+          pdfSaved: !!request.pdfSaved,
+          savedTemplate: request.savedTemplate || null,
+        };
+      }
+
+      async function syncRequestsFromServer() {
+        try {
+          const user = getStoredUser();
+          const params = new URLSearchParams();
+          const userKey = getUserKey(user);
+          if (userKey) params.set('owner_key', userKey);
+          if (user?.email) params.set('email', String(user.email).trim().toLowerCase());
+
+          const response = await fetch('/clearance-requests?' + params.toString(), {
+            headers: { 'Accept': 'application/json' },
+          });
+          if (!response.ok) return;
+
+          const result = await response.json().catch(() => ({}));
+          const serverRequests = Array.isArray(result.data)
+            ? result.data.map(normalizeServerRequest).filter(Boolean)
+            : [];
+          if (!serverRequests.length) return;
+
+          writeRequests(serverRequests);
+          renderRequests();
+        } catch (error) {
+          console.warn('Unable to sync resident requests from server', error);
+        }
+      }
+
+      function clearResidentAuthState() {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('digibarangay_logged_in');
+        localStorage.removeItem('digibarangay_user');
+        localStorage.removeItem('digibarangay_registered_user');
+        sessionStorage.removeItem('digibarangay_logged_in');
+        sessionStorage.removeItem('digibarangay_user');
+      }
+
+      function setHeaderUser(user) {
+        const nameEl = document.getElementById('dashUserName');
+        const emailEl = document.getElementById('dashUserEmail');
+        const avatarEl = document.getElementById('dashAvatar');
+        const welcomeEl = document.getElementById('welcomeResidentText');
+        const displayName = getUserDisplayName(user);
+        if (nameEl) nameEl.textContent = displayName;
+        if (emailEl) emailEl.textContent = user?.email || '';
+        if (avatarEl) {
+          const initials = displayName
+            .split(' ')
+            .filter(Boolean)
+            .map((part) => part[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase();
+          avatarEl.textContent = initials || 'U';
+        }
+        if (welcomeEl) welcomeEl.textContent = `Welcome back, ${displayName}!`;
+      }
+
+      function currentRequestsForUser(user) {
+        const userKey = getUserKey(user);
+        const userName = getUserDisplayName(user).trim().toLowerCase();
+        return readRequests().filter((request) => {
+          const requestOwner = String(request.ownerKey || request.owner_key || request.userKey || '').trim().toLowerCase();
+          if (requestOwner) return requestOwner === userKey;
+          return String(request.name || '').trim().toLowerCase() === userName;
+        });
+      }
+
+      function renderRequests() {
+        const user = getStoredUser();
+        const tbody = document.getElementById('requestsBody');
+        if (!tbody) return;
+
+        const requests = currentRequestsForUser(user);
+        if (!requests.length) {
+          tbody.innerHTML = '<tr><td colspan="7" class="muted">You have no requests yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = requests.map((request) => {
+          const statusLabel = request.status ? request.status.charAt(0).toUpperCase() + request.status.slice(1) : '';
+          const statusHtml = `<span class="status-badge status-${escapeHtml(request.status || 'pending')}">${escapeHtml(statusLabel)}</span>`;
+          const pdfHtml = request.pdfSaved
+            ? '<span class="status-badge status-approved">Saved</span>'
+            : '<span class="status-badge status-pending">Not Saved</span>';
+          const viewIdButton = (request.idFileUrl || request.idFileDataUrl) ? `<button class="action-btn" data-action="view-id" data-ref="${escapeHtml(request.ref || '')}" title="View ID">🖼️</button>` : '';
+          const actions = `
+            <div class="actions-cell">
+              ${viewIdButton}
+              <button class="action-btn" data-action="view" data-ref="${escapeHtml(request.ref || '')}" title="View">👁️</button>
+              <button class="action-btn" data-action="download" data-ref="${escapeHtml(request.ref || '')}" title="Download">⬇️</button>
+              <button class="action-btn" data-action="delete" data-ref="${escapeHtml(request.ref || '')}" title="Delete">🗑️</button>
+            </div>
+          `;
+          return `<tr data-ref="${escapeHtml(request.ref || '')}"><td>${escapeHtml(request.ref || '')}</td><td>${escapeHtml(request.name || '')}</td><td>${escapeHtml(request.dateRequested || '')}</td><td>${escapeHtml(request.validUntil || '')}</td><td>${statusHtml}</td><td>${pdfHtml}</td><td>${actions}</td></tr>`;
+        }).join('');
+      }
+
+      syncRequestsFromServer();
+
+      function createCertificatePdfBlob(request) {
+        const jsPDF = window.jspdf && window.jspdf.jsPDF;
+        if (!jsPDF) {
+          throw new Error('PDF library unavailable.');
+        }
+
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+        const left = 48;
+        let cursorY = 54;
+        const lineHeight = 20;
+        const contentWidth = pdf.internal.pageSize.getWidth() - left * 2;
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(18);
+        pdf.text('Barangay Clearance Request', left, cursorY);
+        cursorY += 18;
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(11);
+        const lines = [
+          `Reference ID: ${request.ref || '-'}`,
+          `Name: ${request.name || '-'}`,
+          `Email: ${request.email || '-'}`,
+          `Address: ${request.address || '-'}`,
+          `Age: ${request.age || '-'}`,
+          `Contact: ${request.contact || '-'}`,
+          `Purpose: ${request.purpose || request.purposeReason || '-'}`,
+          `Date Requested: ${request.dateRequested || '-'}`,
+          `Valid Until: ${request.validUntil || '-'}`,
+          `Status: ${request.status || '-'}`,
+        ];
+
+        lines.forEach((line) => {
+          const wrapped = pdf.splitTextToSize(line, contentWidth);
+          wrapped.forEach((part) => {
+            if (cursorY > 760) {
+              pdf.addPage();
+              cursorY = 54;
+            }
+            pdf.text(part, left, cursorY);
+            cursorY += lineHeight;
+          });
+        });
+
+        return pdf.output('blob');
+      }
+
+      function openViewIdModal(request) {
+        const modal = document.getElementById('viewIdModal');
+        const image = document.getElementById('viewIdImage');
+        const caption = document.getElementById('viewIdCaption');
+        const imageSrc = request && (request.idFileUrl || request.idFileDataUrl);
+        if (!modal || !request || !imageSrc) return;
+        if (image) image.src = imageSrc;
+        if (caption) caption.textContent = request.idFileName || 'Uploaded valid ID';
+        modal.hidden = false;
+        modal.classList.add('open');
+      }
+
+      function closeViewIdModal() {
+        const modal = document.getElementById('viewIdModal');
+        const image = document.getElementById('viewIdImage');
+        if (modal) {
+          modal.hidden = true;
+          modal.classList.remove('open');
+        }
+        if (image) image.src = '';
+      }
+
+      function openViewModal(request) {
+        const modal = document.getElementById('viewModal');
+        const frame = document.getElementById('viewFrame');
+        const downloadBtn = document.getElementById('viewDownloadBtn');
+        if (!modal || !frame || !request) return;
+
+        const blob = createCertificatePdfBlob(request);
+        const url = URL.createObjectURL(blob);
+        frame.src = url;
+        modal.hidden = false;
+        modal.classList.add('open');
+
+        const closeCurrentUrl = () => URL.revokeObjectURL(url);
+        if (downloadBtn) {
+          downloadBtn.onclick = () => downloadCertificatePdf(request);
+        }
+        modal.addEventListener('click', function onModalClick(event) {
+          if (event.target === modal) {
+            closeCurrentUrl();
+            modal.removeEventListener('click', onModalClick);
+            modal.hidden = true;
+            modal.classList.remove('open');
+            frame.src = 'about:blank';
+          }
+        });
+      }
+
+      async function downloadCertificatePdf(request) {
+        try {
+          const blob = createCertificatePdfBlob(request);
+          const link = document.createElement('a');
+          const url = URL.createObjectURL(blob);
+          link.href = url;
+          link.download = `${request.ref || 'certificate'}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+        } catch (error) {
+          alert(error.message || 'Unable to download PDF right now.');
+        }
+      }
+
+      function openApplyModal() {
+        const modal = document.getElementById('applyModal');
+        const form = document.getElementById('applyForm');
+        if (!modal || !form) return;
+        form.reset();
+        const user = getStoredUser();
+        if (form.elements.fullName) form.elements.fullName.value = getUserDisplayName(user);
+        if (form.elements.email) form.elements.email.value = user?.email || '';
+        const preview = document.getElementById('idPreview');
+        if (preview) preview.style.display = 'none';
+        modal.hidden = false;
+        modal.classList.add('open');
+      }
+
+      function closeApplyModal() {
+        const modal = document.getElementById('applyModal');
+        if (modal) {
+          modal.hidden = true;
+          modal.classList.remove('open');
+        }
+      }
+
+      function openChangePasswordModal() {
+        const modal = document.getElementById('changePasswordModal');
+        const form = document.getElementById('changePasswordForm');
+        if (!modal || !form) return;
+        form.reset();
+        modal.hidden = false;
+        modal.classList.add('open');
+      }
+
+      function closeChangePasswordModal() {
+        const modal = document.getElementById('changePasswordModal');
+        if (modal) {
+          modal.hidden = true;
+          modal.classList.remove('open');
+        }
+      }
+
+      async function handleLogout(event) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+          }
+        }
+
+        const token = localStorage.getItem('authToken');
+        clearResidentAuthState();
+
+        try {
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) headers.Authorization = 'Bearer ' + token;
+          await fetch('/api/auth/logout', { method: 'POST', headers });
+        } catch (err) {
+          console.error('Logout error:', err);
+        }
+
+        window.location.replace('/');
+        return false;
+      }
+
+      window.handleResidentLogout = handleLogout;
+
+      const user = getStoredUser();
+      if (user) setHeaderUser(user);
+      renderRequests();
+
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+      }
+
+      const profileInfo = document.getElementById('profileInfo');
+      if (profileInfo) {
+        profileInfo.addEventListener('click', (event) => {
+          if (event.target.closest('#logoutBtn')) return;
+          event.preventDefault();
+          openChangePasswordModal();
+        });
+      }
+
+      const applyBtn = document.querySelector('.apply-btn');
+      if (applyBtn) {
+        applyBtn.addEventListener('click', (event) => {
+          event.preventDefault();
+          openApplyModal();
+        });
+      }
+
+      const applyModalClose = document.getElementById('applyModalClose');
+      const applyCancel = document.getElementById('applyCancel');
+      if (applyModalClose) applyModalClose.addEventListener('click', closeApplyModal);
+      if (applyCancel) applyCancel.addEventListener('click', closeApplyModal);
+      const applyModal = document.getElementById('applyModal');
+      if (applyModal) {
+        applyModal.addEventListener('click', (event) => {
+          if (event.target === applyModal) closeApplyModal();
+        });
+      }
+
+      const viewIdModalClose = document.getElementById('viewIdModalClose');
+      const viewIdModal = document.getElementById('viewIdModal');
+      if (viewIdModalClose) viewIdModalClose.addEventListener('click', closeViewIdModal);
+      if (viewIdModal) {
+        viewIdModal.addEventListener('click', (event) => {
+          if (event.target === viewIdModal) closeViewIdModal();
+        });
+      }
+
+      const viewModalClose = document.getElementById('viewModalClose');
+      const viewModal = document.getElementById('viewModal');
+      const viewFrame = document.getElementById('viewFrame');
+      if (viewModalClose && viewModal && viewFrame) {
+        viewModalClose.addEventListener('click', () => {
+          viewModal.hidden = true;
+          viewModal.classList.remove('open');
+          viewFrame.src = 'about:blank';
+        });
+        viewModal.addEventListener('click', (event) => {
+          if (event.target === viewModal) {
+            viewModal.hidden = true;
+            viewModal.classList.remove('open');
+            viewFrame.src = 'about:blank';
+          }
+        });
+      }
+
+      const changePasswordModalClose = document.getElementById('changePasswordModalClose');
+      const changePasswordCancel = document.getElementById('changePasswordCancel');
+      const changePasswordModal = document.getElementById('changePasswordModal');
+      const changePasswordForm = document.getElementById('changePasswordForm');
+      if (changePasswordModalClose) changePasswordModalClose.addEventListener('click', closeChangePasswordModal);
+      if (changePasswordCancel) changePasswordCancel.addEventListener('click', closeChangePasswordModal);
+      if (changePasswordModal) {
+        changePasswordModal.addEventListener('click', (event) => {
+          if (event.target === changePasswordModal) closeChangePasswordModal();
+        });
+      }
+      if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const oldPassword = document.getElementById('oldPasswordInput')?.value.trim() || '';
+          const newPassword = document.getElementById('newPasswordInput')?.value.trim() || '';
+          const confirmPassword = document.getElementById('confirmPasswordInput')?.value.trim() || '';
+
+          if (!oldPassword || !newPassword || !confirmPassword) {
+            alert('All fields are required.');
+            return;
+          }
+          if (newPassword !== confirmPassword) {
+            alert('New Password and Confirm Password do not match.');
+            return;
+          }
+          if (newPassword.length < 6) {
+            alert('New Password must be at least 6 characters long.');
+            return;
+          }
+
+          try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch('/resident/change-password', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Authorization': token ? 'Bearer ' + token : ''
+              },
+              body: JSON.stringify({
+                email: user?.email,
+                oldPassword,
+                newPassword
+              })
+            });
+
+            const result = await response.json().catch(() => ({}));
+            if (response.ok && result.success) {
+              alert('Password changed successfully!');
+              closeChangePasswordModal();
+            } else {
+              alert(result.message || 'Failed to change password.');
+            }
+          } catch (error) {
+            console.error('Password change error:', error);
+            alert('Error changing password. Please try again.');
+          }
+        });
+      }
+
+      const requestsBody = document.getElementById('requestsBody');
+      if (requestsBody) {
+        requestsBody.addEventListener('click', async (event) => {
+          const button = event.target.closest('button[data-action]');
+          if (!button) return;
+
+          const action = button.getAttribute('data-action');
+          const ref = button.getAttribute('data-ref');
+          const requests = readRequests();
+          const user = getStoredUser();
+          const request = requests.find((entry) => {
+            const matchesRef = String(entry.ref || '') === String(ref || '');
+            const ownerKey = String(entry.ownerKey || entry.owner_key || entry.userKey || '').trim().toLowerCase();
+            const userKey = getUserKey(user);
+            const userName = getUserDisplayName(user).trim().toLowerCase();
+            const matchesOwner = ownerKey ? ownerKey === userKey : String(entry.name || '').trim().toLowerCase() === userName;
+            return matchesRef && matchesOwner;
+          });
+
+          if (!request) return;
+
+          if (action === 'view-id') {
+            openViewIdModal(request);
+            return;
+          }
+
+          if (action === 'view') {
+            openViewModal(request);
+            return;
+          }
+
+          if (action === 'download') {
+            await downloadCertificatePdf(request);
+            return;
+          }
+
+          if (action === 'delete') {
+            if (!confirm('Delete this request?')) return;
+            const nextRequests = requests.filter((entry) => String(entry.ref || '') !== String(ref || ''));
+            writeRequests(nextRequests);
+            renderRequests();
+          }
+        });
+      }
+
+      const applyForm = document.getElementById('applyForm');
+      if (applyForm && !window.__digibarangayApplySubmitBound) {
+        const idFileInput = applyForm.querySelector('input[name="idfile"]');
+        const idPreview = document.getElementById('idPreview');
+        const idPreviewImage = document.getElementById('idPreviewImage');
+        const MAX_ID_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
+        const MAX_ID_IMAGE_STORE_BYTES = 850 * 1024;
+        const TARGET_ID_IMAGE_STORE_BYTES = 650 * 1024;
+
+        if (idFileInput) {
+          idFileInput.addEventListener('change', async () => {
+            const file = idFileInput.files && idFileInput.files[0];
+            if (!file) {
+              if (idPreview) idPreview.style.display = 'none';
+              return;
+            }
+            if (!file.type.startsWith('image/')) {
+              alert('Please upload an image file for your valid ID.');
+              idFileInput.value = '';
+              if (idPreview) idPreview.style.display = 'none';
+              return;
+            }
+            if (file.size > MAX_ID_IMAGE_UPLOAD_BYTES) {
+              alert('Please upload an image smaller than 10MB.');
+              idFileInput.value = '';
+              if (idPreview) idPreview.style.display = 'none';
+              return;
+            }
+            const dataUrl = await prepareStoredIdImageDataUrl(file);
+            if (idPreviewImage) idPreviewImage.src = dataUrl;
+            if (idPreview) idPreview.style.display = 'block';
+          });
+        }
+
+        function blobToDataURL(blob) {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ''));
+            reader.onerror = () => reject(new Error('Unable to read image data.'));
+            reader.readAsDataURL(blob);
+          });
+        }
+
+        function loadImageFromObjectUrl(objectUrl) {
+          return new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = () => reject(new Error('Unable to process image.'));
+            image.src = objectUrl;
+          });
+        }
+
+        async function prepareStoredIdImageDataUrl(file) {
+          if (!file) return null;
+          const objectUrl = URL.createObjectURL(file);
+          try {
+            if (file.size <= MAX_ID_IMAGE_STORE_BYTES) {
+              return await blobToDataURL(file);
+            }
+
+            const image = await loadImageFromObjectUrl(objectUrl);
+            const attempts = [
+              { dimension: 1400, quality: 0.82 },
+              { dimension: 1100, quality: 0.72 },
+              { dimension: 900, quality: 0.62 },
+              { dimension: 700, quality: 0.55 },
+            ];
+
+            let fallbackBlob = null;
+            for (const attempt of attempts) {
+              const scale = Math.min(1, attempt.dimension / Math.max(image.width || 1, image.height || 1));
+              const canvas = document.createElement('canvas');
+              canvas.width = Math.max(1, Math.round((image.width || 1) * scale));
+              canvas.height = Math.max(1, Math.round((image.height || 1) * scale));
+              const context = canvas.getContext('2d');
+              if (!context) continue;
+              context.fillStyle = '#ffffff';
+              context.fillRect(0, 0, canvas.width, canvas.height);
+              context.drawImage(image, 0, 0, canvas.width, canvas.height);
+              const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', attempt.quality));
+              if (!blob) continue;
+              fallbackBlob = blob;
+              if (blob.size <= TARGET_ID_IMAGE_STORE_BYTES) {
+                return await blobToDataURL(blob);
+              }
+            }
+            if (fallbackBlob) {
+              return await blobToDataURL(fallbackBlob);
+            }
+            return await blobToDataURL(file);
+          } finally {
+            URL.revokeObjectURL(objectUrl);
+          }
+        }
+
+        applyForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const formData = new FormData(applyForm);
+          const fullName = String(formData.get('fullName') || '').trim();
+          const email = String(formData.get('email') || '').trim().toLowerCase();
+          const address = String(formData.get('address') || '').trim();
+          const age = String(formData.get('age') || '').trim();
+          const contact = String(formData.get('contact') || '').trim();
+          const purpose = String(formData.get('purpose') || '').trim();
+          const purposeReason = String(formData.get('purposeReason') || '').trim();
+          const idFile = idFileInput && idFileInput.files && idFileInput.files[0];
+
+          if (!fullName || !email || !address || !age || !contact || !purpose || !purposeReason) {
+            alert('Please complete required fields.');
+            return;
+          }
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            alert('Please enter a valid email address.');
+            return;
+          }
+          if (!idFile || !idFile.type.startsWith('image/')) {
+            alert('Please upload a photo of your valid ID.');
+            return;
+          }
+          if (idFile.size > MAX_ID_IMAGE_UPLOAD_BYTES) {
+            alert('Please upload an image smaller than 10MB.');
+            return;
+          }
+
+          const requests = readRequests();
+          const now = new Date();
+          const user = getStoredUser();
+          const ref = 'BR' + now.getTime();
+          const idDataUrl = await prepareStoredIdImageDataUrl(idFile);
+
+          requests.unshift({
+            ref,
+            name: fullName,
+            email,
+            address,
+            age,
+            dateRequested: now.toISOString().split('T')[0],
+            validUntil: new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()).toISOString().split('T')[0],
+            status: 'pending',
+            purpose,
+            purposeReason,
+            contact,
+            ownerKey: getUserKey(user),
+            idFileName: idFile.name,
+            idFileType: idFile.type,
+            idFileUrl: '',
+            pdfSaved: false
+          });
+
+          writeRequests(requests);
+          closeApplyModal();
+          renderRequests();
+          alert(`Application submitted successfully! ${ref}`);
+        });
+      }
+
+      window.addEventListener('storage', (event) => {
+        if (event.key === 'digibarangay_requests' || event.key === 'digibarangay_user' || event.key === 'digibarangay_registered_user') {
+          setHeaderUser(getStoredUser());
+          renderRequests();
+        }
+      });
     })();
   </script>
 </body>

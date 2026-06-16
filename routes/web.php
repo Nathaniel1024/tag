@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\OfficerController;
 use App\Http\Controllers\Website\WebsiteController;
+use App\Http\Controllers\Website\ClearanceRequestController;
 
 $adminViewResponse = function (string $view) {
     if (session('admin_logged_in') !== true || ! in_array(session('admin_role'), ['admin', 'official'], true)) {
@@ -65,6 +66,9 @@ Route::post('/rest-acc/send-email', [AdminController::class, 'sendRequestEmail']
 Route::get('/docs', function () {
     return view('website.docs');
 });
+Route::get('/clearance-requests', [ClearanceRequestController::class, 'index']);
+Route::post('/clearance-requests', [ClearanceRequestController::class, 'store']);
+Route::get('/clearance-requests/{ref}/image', [ClearanceRequestController::class, 'image'])->name('clearance-requests.image');
 Route::post('/docs/certificate-pdf', [WebsiteController::class, 'downloadCertificatePdf']);
 Route::get('/loginadmin', function () {
     return view('website.loginadmin');
@@ -75,7 +79,8 @@ Route::post('/loginadmin/logout', function (Request $request) {
     $request->session()->regenerateToken();
 
     return response()->json([
-        'message' => 'Logged out successfully.'
+        'message' => 'Logged out successfully.',
+        'redirect' => url('/'),
     ])
     ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
     ->header('Pragma', 'no-cache')

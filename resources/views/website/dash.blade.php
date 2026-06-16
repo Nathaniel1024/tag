@@ -62,7 +62,7 @@
       <nav class="adm-nav" id="admSidebarNav" aria-label="Admin navigation">
         <a class="active" href="/dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
         <a href="/certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
-        <a href="/resident"><span class="ico">👥</span><span>Residents record</span></a>
+        <a href="/resident"><span class="ico">👥</span><span>Resident Records</span></a>
         <a href="/rest-acc"><span class="ico">🔐</span><span>Resident Accounts</span></a>
         @if ($isAdmin)
           <a href="/dashboard"><span class="ico">🧭</span><span>Admin Dashboard</span></a>
@@ -229,6 +229,19 @@
     <div class="modal-body" style="text-align:center;">
       <p>Your email has been sent successfully with the PDF attached.</p>
       <button class="btn primary" id="emailSuccessOkBtn" style="margin-top:10px;">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="requestImageModal" class="modal-overlay" hidden>
+  <div class="modal" style="max-width:760px;">
+    <button class="modal-close" id="requestImageClose">âœ•</button>
+    <div class="modal-header">
+      <h2>Uploaded ID Image</h2>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:1rem;align-items:center;">
+      <img id="requestImagePreview" alt="Uploaded ID" style="max-width:100%;max-height:78vh;border-radius:14px;border:1px solid #e5e7eb;object-fit:contain;background:#fff;" />
+      <div id="requestImageCaption" style="font-size:.95rem;color:#334155;text-align:center;"></div>
     </div>
   </div>
 </div>
@@ -1100,6 +1113,48 @@
       window.location.href = '/certificate?t=' + Date.now();
     }
 
+    function openRequestImageModal(ref) {
+      const all = loadRequests();
+      const req = all.find(r => String(r.ref) === String(ref));
+      if (!req) {
+        alert('Request not found.');
+        return;
+      }
+
+      const imageSrc = req.idFileUrl || req.idFileDataUrl;
+      if (!imageSrc) {
+        alert('No uploaded ID image is available for this request.');
+        return;
+      }
+
+      const modal = document.getElementById('requestImageModal');
+      const image = document.getElementById('requestImagePreview');
+      const caption = document.getElementById('requestImageCaption');
+      if (image) image.src = imageSrc;
+      if (caption) {
+        const captionParts = [
+          req.idFileName || 'Uploaded valid ID',
+          req.name ? 'Resident: ' + req.name : '',
+          req.ref ? 'Reference: ' + req.ref : '',
+        ].filter(Boolean);
+        caption.textContent = captionParts.join(' • ');
+      }
+      if (modal) {
+        modal.hidden = false;
+        modal.classList.add('open');
+      }
+    }
+
+    function closeRequestImageModal() {
+      const modal = document.getElementById('requestImageModal');
+      const image = document.getElementById('requestImagePreview');
+      if (modal) {
+        modal.hidden = true;
+        modal.classList.remove('open');
+      }
+      if (image) image.src = '';
+    }
+
     async function printCertificateForRef(ref) {
       const all = loadRequests();
       const req = all.find(r => String(r.ref) === String(ref));
@@ -1212,6 +1267,52 @@
 
     const requests = loadRequests();
 
+    function normalizeServerRequest(request) {
+      if (!request || typeof request !== 'object') return null;
+      return {
+        ref: String(request.ref || '').trim(),
+        name: String(request.name || '').trim(),
+        email: String(request.email || '').trim(),
+        address: String(request.address || '').trim(),
+        age: String(request.age ?? '').trim(),
+        dateRequested: String(request.dateRequested || '').trim(),
+        validUntil: String(request.validUntil || '').trim(),
+        status: String(request.status || 'pending').trim(),
+        purpose: String(request.purpose || '').trim(),
+        purposeReason: String(request.purposeReason || request.purpose_reason || '').trim(),
+        contact: String(request.contact || '').trim(),
+        ownerKey: String(request.ownerKey || request.owner_key || '').trim(),
+        idFileName: String(request.idFileName || request.id_file_name || '').trim(),
+        idFileType: String(request.idFileType || request.id_file_mime || '').trim(),
+        idFileUrl: String(request.idFileUrl || request.id_file_url || '').trim(),
+        pdfSaved: !!request.pdfSaved,
+        savedTemplate: request.savedTemplate || null,
+      };
+    }
+
+    async function syncRequestsFromServer() {
+      try {
+        const response = await fetch('/clearance-requests', {
+          headers: { 'Accept': 'application/json' },
+        });
+        if (!response.ok) return;
+
+        const result = await response.json().catch(() => ({}));
+        const serverRequests = Array.isArray(result.data)
+          ? result.data.map(normalizeServerRequest).filter(Boolean)
+          : [];
+        if (!serverRequests.length) return;
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(serverRequests));
+        knownRefSet = new Set(serverRequests.map((item) => String(item?.ref || '').trim()).filter(Boolean));
+        calcStats(serverRequests);
+        renderTable(serverRequests);
+        updateNotifications(serverRequests);
+      } catch (error) {
+        console.warn('Unable to sync clearance requests from server', error);
+      }
+    }
+
     knownRefSet = new Set(requests.map((r) => String(r?.ref || '').trim()).filter(Boolean));
     if (!localStorage.getItem(NOTIF_SEEN_KEY)) {
       writeSeenRefs(knownRefSet);
@@ -1220,6 +1321,7 @@
     calcStats(requests);
     renderTable(requests);
     updateNotifications(requests);
+    syncRequestsFromServer();
 
     document.getElementById('q').addEventListener('input', () => renderTable(loadRequests()));
     document.getElementById('statusFilter').addEventListener('change', () => renderTable(loadRequests()));
@@ -1302,7 +1404,11 @@
       }
 
       if (action === 'view' || action === 'cert' || action === 'edit') {
-        openCertificateWithRequest(ref);
+        if (action === 'view') {
+          openRequestImageModal(ref);
+        } else {
+          openCertificateWithRequest(ref);
+        }
         return;
       }
 
@@ -1363,8 +1469,17 @@
         console.error('Logout error:', err);
       }
 
-      window.location.replace('/loginadmin');
+      window.location.replace('/');
     });
+
+    const requestImageClose = document.getElementById('requestImageClose');
+    const requestImageModal = document.getElementById('requestImageModal');
+    if (requestImageClose) requestImageClose.addEventListener('click', closeRequestImageModal);
+    if (requestImageModal) {
+      requestImageModal.addEventListener('click', (event) => {
+        if (event.target === requestImageModal) closeRequestImageModal();
+      });
+    }
 
     window.addEventListener('pageshow', (event) => {
       if (event.persisted) {

@@ -118,10 +118,10 @@
 			<button class="modal-close" id="loginModalClose" aria-label="Close">✕</button>
 			<div class="modal-header"><h2 id="loginTitle">Resident Portal</h2></div>
 			<div class="modal-body">
-				<p class="muted">Login to access your account</p>
+				<p class="muted">Login with your email address and password</p>
 				<form id="loginModalForm" class="modal-form" novalidate>
-					<label>Username & Email Address
-						<input name="user" type="text" placeholder="JaneD or JaneDelacruz@gmail.com" required />
+					<label>Email Address
+						<input name="email" type="email" placeholder="JaneDelacruz@gmail.com" required />
 					</label>
 					<label>Password
 						<div class="input-with-toggle">

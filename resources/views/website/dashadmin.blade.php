@@ -3,95 +3,91 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>High Admin Dashboard</title>
   <meta name="csrf-token" content="{{ csrf_token() }}" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Admin Dashboard - DIGIBARANGAY</title>
+  <link rel="icon" type="image/png" href="{{ asset('img/logo_zed.png') }}" />
   <link rel="stylesheet" href="{{ asset('css/styles.css') }}" />
   <style>
-    body{margin:0;background:#f5f5f5}
-    .layout{display:flex;min-height:100vh}
-    .sidebar{width:300px;background:#0f5668;color:#fff;padding:20px;box-sizing:border-box;display:flex;flex-direction:column}
-    .brand{display:flex;gap:12px;align-items:flex-start;margin-bottom:30px}
-    .brand img{height:50px;width:50px}
-    .brand-text strong{display:block;font-size:15px;line-height:1.2}
-    .brand-text small{display:block;font-size:12px;opacity:0.8}
-    .nav{flex:1}
-    .nav a{display:flex;gap:12px;align-items:center;padding:12px;color:#fff;text-decoration:none;border-radius:6px;margin-bottom:8px;font-size:14px}
-    .nav a.active{background:rgba(0,0,0,0.3)}
-    .logout-btn{display:flex;gap:12px;align-items:center;padding:12px;color:#fff;text-decoration:none;border:none;background:none;cursor:pointer;border-top:1px solid rgba(255,255,255,0.2);font-size:14px;width:100%}
-    .main{flex:1;display:flex;flex-direction:column}
-    .topbar{background:#7fa8b4;color:#fff;padding:15px 30px;display:flex;justify-content:space-between;align-items:center}
-    .topbar-title strong{display:block;font-size:15px;font-weight:700}
-    .topbar-title span{display:block;font-size:12px;opacity:0.9}
-    .top-icons span{margin-left:15px;font-size:18px;cursor:pointer}
-    .content{flex:1;padding:40px;overflow-y:auto}
-    .card{background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-    table{width:100%;border-collapse:collapse}
-    thead tr{background:#0b66c2;color:#fff}
-    th{padding:14px;text-align:left;font-weight:600;font-size:14px}
-    td{padding:14px;border-bottom:1px solid #eee;font-size:14px}
-    .btn{padding:6px 12px;border-radius:4px;border:none;cursor:pointer;font-weight:600;font-size:12px;margin-right:4px}
-    .btn-view{background:#6c757d;color:#fff}
-    .btn-edit{background:#ffc107;color:#333}
-    .btn-approve{background:#28a745;color:#fff}
-    .btn-reject{background:#dc3545;color:#fff}
-    #passwordModal .modal-body{overflow:visible;}
-    #passwordModal .modal{overflow:visible;}
+    .admin-dashboard {
+      position: relative;
+    }
+
+    .admin-dashboard::before {
+      content: '';
+      position: fixed;
+      left: 50%;
+      top: 54%;
+      width: 460px;
+      height: 460px;
+      transform: translate(-50%, -50%);
+      background: url('{{ asset('img/Barangay Official Logo.png') }}') center/contain no-repeat;
+      opacity: .07;
+      filter: grayscale(100%) blur(2px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .adm-layout {
+      position: relative;
+      z-index: 1;
+    }
   </style>
 </head>
-<body>
-  <div class="layout">
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <div class="brand">
-        <img src="{{ asset('img/logo_zed.png') }}" alt="DIGIBARANGAY" />
-        <div class="brand-text">
+<body class="admin-dashboard">
+  <div class="adm-layout">
+    <button class="adm-sidebar-overlay" id="admSidebarOverlay" type="button" aria-label="Close menu"></button>
+    <aside class="adm-sidebar">
+      <div class="adm-brand">
+        <img src="{{ asset('img/logo_zed.png') }}" alt="DIGIBARANGAY logo" />
+        <div>
           <strong>DIGIBARANGAY</strong>
           <small>Smart Clearance System</small>
         </div>
       </div>
 
-      @php
-        $role = session('admin_role');
-        $isAdmin = $role === 'admin';
-        $isOfficial = $role === 'official';
-      @endphp
-      <nav class="nav">
-        <!-- Dashboard visible to both admin and official -->
+      @php($isAdmin = session('admin_role') === 'admin')
+      <nav class="adm-nav" id="admSidebarNav" aria-label="Admin navigation">
         <a href="/dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
-
-        <!-- Certificate, Residents and Resident Accounts visible to both roles -->
         <a href="/certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
-        <a href="/resident"><span class="ico">👥</span><span>Residents record</span></a>
+        <a href="/resident"><span class="ico">👥</span><span>Resident Records</span></a>
         <a href="/rest-acc"><span class="ico">🔐</span><span>Resident Accounts</span></a>
-
-        <!-- Admin-only links -->
         @if ($isAdmin)
           <a class="active" href="/dashboard"><span class="ico">🧭</span><span>Admin Dashboard</span></a>
           <a href="/barangay"><span class="ico">👤</span><span>Barangay Official</span></a>
         @endif
       </nav>
 
-      <button class="logout-btn">
-        <span>⎋</span><span>Logout</span>
-      </button>
+      <div class="adm-sidebar-footer">
+        <button class="adm-logout" type="button" id="adminLogout">
+          <span class="ico">⎋</span><span>Logout</span>
+        </button>
+      </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
-    <main class="main">
-      <header class="topbar">
-        <div class="topbar-title">
+    <main class="adm-main">
+      <header class="adm-topbar">
+        <button class="adm-menu-toggle" id="admMenuToggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="admSidebarNav">
+          <span class="bars" aria-hidden="true"><span></span><span></span><span></span></span>
+        </button>
+        <div class="role">
           <strong>CHAIRMAN</strong>
           <span>Barangay Administrator</span>
         </div>
         <div class="top-icons">
-          <span>👤</span>
-          <span>🔔</span>
+          <span class="bubble" title="Profile">👤</span>
+          <span class="bubble" title="Notifications">🔔</span>
         </div>
       </header>
 
-      <section class="content">
-        <div class="card">
-          <table id="staffTable">
+      <section class="adm-content">
+        <div class="adm-title">Admin Dashboard</div>
+        <div class="adm-subtitle">Manage barangay officers and account access</div>
+
+        <div class="adm-card" style="padding:1rem">
+          <table id="staffTable" class="adm-table" aria-label="Staff accounts table">
             <thead>
               <tr>
                 <th>Name</th>
@@ -114,7 +110,7 @@
 
   <div id="passwordModal" class="modal-overlay" hidden>
     <div class="modal" style="max-width:400px;">
-      <button class="modal-close" id="passwordClose">✕</button>
+      <button class="modal-close" id="passwordClose" type="button">✕</button>
       <div class="modal-header">
         <h2>Change Password</h2>
       </div>
@@ -129,7 +125,6 @@
   </div>
 
   <script>
-    // Load staff accounts from backend
     async function loadStaff() {
       try {
         const res = await fetch('/api/officers', {
@@ -145,9 +140,6 @@
           document.querySelector('#staffTable tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#666">No staff accounts yet.</td></tr>';
           return;
         }
-
-        // parse response JSON once
-        // (body/staff already obtained above)
 
         const rows = staff.map(s => `
           <tr>
@@ -170,7 +162,6 @@
       }
     }
 
-    // Attach actions for delete and password
     document.querySelector('#staffTable tbody').addEventListener('click', async (event) => {
       const button = event.target.closest('button[data-action]');
       if (!button) return;
@@ -292,8 +283,51 @@
       }
     }
 
-    // Load on page load
     loadStaff();
+
+    document.getElementById('adminLogout').addEventListener('click', async () => {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      try {
+        await fetch('/loginadmin/logout', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+      } catch (err) {
+        console.error('Logout error', err);
+      }
+      window.location.replace('/');
+    });
+
+    const admMenuToggle = document.getElementById('admMenuToggle');
+    const admSidebarOverlay = document.getElementById('admSidebarOverlay');
+    const admNav = document.querySelector('.adm-nav');
+    function setMobileMenu(open) {
+      document.body.classList.toggle('adm-menu-open', !!open);
+      if (admMenuToggle) admMenuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    if (admMenuToggle) {
+      admMenuToggle.addEventListener('click', () => {
+        const willOpen = !document.body.classList.contains('adm-menu-open');
+        setMobileMenu(willOpen);
+      });
+    }
+    if (admSidebarOverlay) {
+      admSidebarOverlay.addEventListener('click', () => setMobileMenu(false));
+    }
+    if (admNav) {
+      admNav.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth <= 720) setMobileMenu(false);
+        });
+      });
+    }
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 720) setMobileMenu(false);
+    });
   </script>
 </body>
 </html>

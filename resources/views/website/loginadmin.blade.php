@@ -23,12 +23,13 @@
             <form id="adminLoginForm" action="{{ route('loginadmin.submit') }}" method="POST" class="space-y-6">
               @csrf
                 <div>
-                    <label for="login" class="block text-gray-800 font-bold mb-2">Email or Username</label>
+                    <label for="email" class="block text-gray-800 font-bold mb-2">Email</label>
                     <input 
                         type="text" 
-                        id="login" 
-                        name="login" 
-                        placeholder="Enter your Email or Username" 
+                        id="email" 
+                        name="email" 
+                        type="email"
+                        placeholder="Enter your Email" 
                         class="w-full px-4 py-3 bg-[#f1f4f9] border-none rounded-xl focus:ring-2 focus:ring-blue-400 outline-none transition-all placeholder:text-gray-400 text-gray-700"
                         required
                     >
@@ -113,12 +114,12 @@
   const adminLoginForm = document.getElementById('adminLoginForm');
   adminLoginForm.addEventListener('submit', async function (e) {
     e.preventDefault();
-    const login = String(adminLoginForm.login.value || '').trim();
+    const email = String(adminLoginForm.email.value || '').trim();
     const password = String(adminLoginForm.password.value || '').trim();
     const csrf = adminLoginForm.querySelector('input[name="_token"]')?.value || '';
 
-    if (!login || !password) {
-      showError('Please enter username/email and password.');
+    if (!email || !password) {
+      showError('Please enter email and password.');
       return;
     }
 
@@ -131,7 +132,7 @@
           'X-CSRF-TOKEN': csrf,
           'X-Requested-With': 'XMLHttpRequest'
         },
-        body: JSON.stringify({ login, email: login, password })
+        body: JSON.stringify({ email, password })
       });
 
       let body = {};

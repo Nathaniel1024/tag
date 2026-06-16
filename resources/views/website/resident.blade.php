@@ -52,7 +52,7 @@
       <nav class="adm-nav" id="admSidebarNav" aria-label="Admin navigation">
         <a href="/dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
         <a href="/certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
-        <a class="active" href="/resident"><span class="ico">👥</span><span>Residents record</span></a>
+        <a class="active" href="/resident"><span class="ico">👥</span><span>Resident Records</span></a>
         <a href="/rest-acc"><span class="ico">🔐</span><span>Resident Accounts</span></a>
         @if ($isAdmin)
           <a href="/dashboard"><span class="ico">🧭</span><span>Admin Dashboard</span></a>
@@ -91,7 +91,7 @@
       </header>
 
       <section class="adm-content">
-        <div class="adm-title">Residents record</div>
+        <div class="adm-title">Resident Records</div>
         <div class="adm-subtitle">List of residents who submitted clearance requests</div>
 
         <div class="adm-stats">

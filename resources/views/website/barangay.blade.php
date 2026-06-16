@@ -7,143 +7,331 @@
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>High Admin - Create Official</title>
+  <title>Barangay Official - DIGIBARANGAY</title>
   <link rel="icon" type="image/png" href="{{ asset('img/logo_zed.png') }}" />
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="{{ asset('css/styles.css') }}" />
   <style>
-    body{margin:0;background:#f5f5f5}
-    .layout{display:flex;min-height:100vh}
-    .sidebar{width:300px;background:#0f5668;color:#fff;padding:20px;box-sizing:border-box;display:flex;flex-direction:column}
-    .brand{display:flex;gap:12px;align-items:flex-start;margin-bottom:30px}
-    .brand img{height:50px;width:50px}
-    .brand-text strong{display:block;font-size:15px;line-height:1.2}
-    .brand-text small{display:block;font-size:12px;opacity:0.8}
-    .nav{flex:1}
-    .nav a{display:flex;gap:12px;align-items:center;padding:12px;color:#fff;text-decoration:none;border-radius:6px;margin-bottom:8px;font-size:14px}
-    .nav a.active{background:rgba(0,0,0,0.3)}
-    .logout-btn{display:flex;gap:12px;align-items:center;padding:12px;color:#fff;text-decoration:none;border:none;background:none;cursor:pointer;border-top:1px solid rgba(255,255,255,0.2);font-size:14px;width:100%}
-    .main{flex:1;display:flex;flex-direction:column}
-    .topbar{background:#7fa8b4;color:#fff;padding:15px 30px;display:flex;justify-content:space-between;align-items:center}
-    .topbar-title strong{display:block;font-size:15px;font-weight:700}
-    .topbar-title span{display:block;font-size:12px;opacity:0.9}
-    .top-icons span{margin-left:15px;font-size:18px;cursor:pointer}
-    .content{flex:1;padding:40px;overflow-y:auto}
-    .card{background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-    .card-title{font-size:18px;font-weight:700;color:#333;margin-bottom:4px}
-    .card-subtitle{font-size:13px;color:#666;margin-bottom:24px}
-    label{display:block;font-weight:600;margin-top:14px;margin-bottom:6px;font-size:14px;color:#333}
-    input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-size:14px}
-    .form-row{display:flex;gap:15px;margin-top:12px}
-    .form-row input{flex:1}
-    .create-btn{background:#0b66c2;color:#fff;padding:12px 24px;border:none;border-radius:6px;font-weight:700;cursor:pointer;margin-top:20px;font-size:14px}
-    .create-btn:hover{background:#0a5ab0}
+    .admin-dashboard {
+      position: relative;
+    }
+
+    .admin-dashboard::before {
+      content: '';
+      position: fixed;
+      left: 50%;
+      top: 54%;
+      width: 460px;
+      height: 460px;
+      transform: translate(-50%, -50%);
+      background: url('{{ asset('img/Barangay Official Logo.png') }}') center/contain no-repeat;
+      opacity: .07;
+      filter: grayscale(100%) blur(2px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .adm-layout {
+      position: relative;
+      z-index: 1;
+    }
+
+    .barangay-page {
+      padding: 1rem 1rem 1.5rem;
+    }
+
+    .barangay-page-inner {
+      width: 100%;
+    }
+
+    .barangay-form-shell {
+      width: 100%;
+      max-width: none;
+    }
+
+    .barangay-form-card {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .barangay-form-head {
+      background: linear-gradient(180deg, #0b66c3 0%, #2563eb 100%);
+      color: #fff;
+      padding: 1.25rem 1.5rem 1.4rem;
+    }
+
+    .barangay-form-head h3 {
+      margin: 0;
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: .01em;
+    }
+
+    .barangay-form-head p {
+      margin: .45rem 0 0;
+      color: rgba(255, 255, 255, .92);
+      line-height: 1.6;
+      font-size: .98rem;
+    }
+
+    .barangay-form-body {
+      padding: 2rem;
+    }
+
+    .barangay-banner {
+      margin-bottom: 1rem;
+      padding: .9rem 1rem;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+      border: 1px solid #dbeafe;
+      color: #1e3a8a;
+      font-weight: 700;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, .08);
+    }
+
+    .barangay-alert {
+      border-radius: 12px;
+      padding: .85rem 1rem;
+      margin-bottom: .9rem;
+      display: none;
+    }
+
+    .barangay-alert.success {
+      background: #e6f9ef;
+      color: #064e3b;
+    }
+
+    .barangay-alert.error {
+      background: #ffecec;
+      color: #c9302c;
+    }
+
+    .barangay-form {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .barangay-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.15rem;
+    }
+
+    .barangay-field {
+      display: grid;
+      gap: .45rem;
+    }
+
+    .barangay-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .barangay-field label {
+      margin: 0;
+      font-weight: 800;
+      font-size: .92rem;
+      color: #0f172a;
+    }
+
+    .barangay-field input,
+    .barangay-field select {
+      width: 100%;
+      padding: .95rem 1rem;
+      border: 1px solid #dbe3ee;
+      border-radius: 14px;
+      background: #f8fafc;
+      font-size: .98rem;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+
+    .barangay-field input:focus,
+    .barangay-field select:focus {
+      border-color: #60a5fa;
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(96, 165, 250, .14);
+    }
+
+    .barangay-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: .25rem;
+    }
+
+    .barangay-actions .create-btn {
+      min-width: 180px;
+      border-radius: 14px;
+      padding: 1rem 1.2rem;
+      font-size: 1rem;
+      box-shadow: 0 14px 26px rgba(11, 102, 195, .18);
+    }
+
+    @media (max-width: 720px) {
+      .barangay-form-shell {
+        max-width: 100%;
+      }
+
+      .barangay-form-body {
+        padding: 1rem;
+      }
+
+      .barangay-form-head {
+        padding: 1rem 1rem 1.1rem;
+      }
+
+      .barangay-form-head h3 {
+        font-size: 1.2rem;
+      }
+
+      .barangay-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .barangay-actions {
+        justify-content: stretch;
+      }
+
+      .barangay-actions .create-btn {
+        width: 100%;
+        min-width: 0;
+      }
+    }
+
+    @media (min-width: 1100px) {
+      .barangay-page {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+      }
+
+      .barangay-form-body {
+        padding: 2.25rem;
+      }
+    }
   </style>
 </head>
-<body>
-  @if ($errors->any())
-    <div style="
-        background-color: #fff5f5; 
-        border-left: 5px solid #f56565; 
-        color: #c53030; 
-        padding: 16px; 
-        margin-bottom: 24px; 
-        border-radius: 4px; 
-        font-family: sans-serif;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    " role="alert">
-        
-        <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">
-            Please correct the following errors:
-        </div>
-
-        <ul style="
-            margin: 0; 
-            padding-left: 20px; 
-            list-style-type: disc;
-            font-size: 14px;
-            line-height: 1.5;
-        ">
-            @foreach ($errors->all() as $error)
-                <li style="margin-bottom: 4px;">{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
-  <div class="layout">
-    <aside class="sidebar">
-      <div class="brand">
-        <img src="{{ asset('img/logo_zed.png') }}" alt="DIGIBARANGAY" />
-        <div class="brand-text">
+<body class="admin-dashboard">
+  <div class="adm-layout">
+    <button class="adm-sidebar-overlay" id="admSidebarOverlay" type="button" aria-label="Close menu"></button>
+    <aside class="adm-sidebar">
+      <div class="adm-brand">
+        <img src="{{ asset('img/logo_zed.png') }}" alt="DIGIBARANGAY logo" />
+        <div>
           <strong>DIGIBARANGAY</strong>
           <small>Smart Clearance System</small>
         </div>
       </div>
 
-      <nav class="nav">
+      @php($isAdmin = session('admin_role') === 'admin')
+      <nav class="adm-nav" id="admSidebarNav" aria-label="Admin navigation">
         <a href="/dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
         <a href="/certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
-        <a href="/resident"><span class="ico">👥</span><span>Residents record</span></a>
+        <a href="/resident"><span class="ico">👥</span><span>Resident Records</span></a>
         <a href="/rest-acc"><span class="ico">🔐</span><span>Resident Accounts</span></a>
-        <a href="/dashboard"><span class="ico">🧭</span><span>Admin Dashboard</span></a>
-        <a class="active" href="/barangay"><span class="ico">👤</span><span>Barangay Official</span></a>
+        @if ($isAdmin)
+          <a href="/dashboard"><span class="ico">🧭</span><span>Admin Dashboard</span></a>
+          <a class="active" href="/barangay"><span class="ico">👤</span><span>Barangay Official</span></a>
+        @endif
       </nav>
 
-      <button class="logout-btn" id="logoutBtn" type="button">
-        <span>⎋</span><span>Logout</span>
-      </button>
+      <div class="adm-sidebar-footer">
+        <button class="adm-logout" type="button" id="adminLogout">
+          <span class="ico">⎋</span><span>Logout</span>
+        </button>
+      </div>
     </aside>
 
-    <main class="main">
-      <header class="topbar">
-        <div class="topbar-title">
+    <main class="adm-main">
+      <header class="adm-topbar">
+        <button class="adm-menu-toggle" id="admMenuToggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="admSidebarNav">
+          <span class="bars" aria-hidden="true"><span></span><span></span><span></span></span>
+        </button>
+        <div class="role">
           <strong>CHAIRMAN</strong>
           <span>Barangay Administrator</span>
         </div>
+        <div class="top-icons">
+          <span class="bubble" title="Profile">👤</span>
+          <span class="bubble" title="Notifications">🔔</span>
+        </div>
       </header>
 
-      <section class="content">
-        <div class="card">
-          <div class="card-title">Create Barangay Official</div>
-          <div class="card-subtitle">Add a new barangay official account</div>
+      <section class="adm-content barangay-page">
+        <div class="barangay-page-inner">
+          <div class="adm-title">Barangay Official</div>
+          <div class="adm-subtitle">Create and manage barangay officer accounts</div>
 
-          <div id="msgSuccess" style="background:#e6f9ef;color:#064e3b;padding:10px;border-radius:6px;margin-bottom:12px;display:none"></div>
-          <div id="msgError" style="background:#ffecec;color:#c9302c;padding:10px;border-radius:6px;margin-bottom:12px;display:none"></div>
-
-          <form id="createForm">
-            <label>Full name</label>
-            <input name="fullname" required />
-
-            <div class="form-row">
-              <input name="email" type="email" placeholder="Email" required />
-              <input name="username" placeholder="Username" required />
+          <div class="adm-card barangay-form-shell barangay-form-card">
+            <div class="barangay-form-head">
+              <h3>Create Barangay Official</h3>
+              <p>Add a new barangay official account. The form adapts to mobile and desktop widths.</p>
             </div>
+            <div class="barangay-form-body">
+              <div id="msgSuccess" class="barangay-alert success"></div>
+              <div id="msgError" class="barangay-alert error"></div>
 
-            <div class="form-row">
-              <input name="password" type="password" minlength="6" placeholder="Password" required />
-              <input name="passwordConfirm" type="password" minlength="6" placeholder="Confirm Password" required />
+              <div class="barangay-banner">
+                Fill in the official's details below. All required fields are marked by the browser.
+              </div>
+
+              <form id="createForm" class="barangay-form">
+                <div class="barangay-field full">
+                  <label>Full name</label>
+                  <input name="fullname" required />
+                </div>
+
+                <div class="barangay-grid">
+                  <div class="barangay-field">
+                    <label>Email</label>
+                    <input name="email" type="email" placeholder="Email" required />
+                  </div>
+                  <div class="barangay-field">
+                    <label>Username</label>
+                    <input name="username" placeholder="Username" required />
+                  </div>
+                </div>
+
+                <div class="barangay-grid">
+                  <div class="barangay-field">
+                    <label>Password</label>
+                    <input name="password" type="password" minlength="6" placeholder="Password" required />
+                  </div>
+                  <div class="barangay-field">
+                    <label>Confirm Password</label>
+                    <input name="passwordConfirm" type="password" minlength="6" placeholder="Confirm Password" required />
+                  </div>
+                </div>
+
+                <div class="barangay-grid">
+                  <div class="barangay-field">
+                    <label>Contact number</label>
+                    <input name="contact" placeholder="09XXXXXXXXX" />
+                  </div>
+                  <div class="barangay-field">
+                    <label>Role</label>
+                    <select name="role">
+                      <option value="admin" selected>Admin</option>
+                      <option value="official">Official</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="barangay-field full">
+                  <label>Complete address</label>
+                  <input name="address" />
+                </div>
+
+                <div class="barangay-actions">
+                  <button type="submit" class="create-btn">Create Account</button>
+                </div>
+              </form>
             </div>
-
-            <label>Contact number</label>
-            <input name="contact" placeholder="09XXXXXXXXX" />
-
-            <label>Complete address</label>
-            <input name="address" />
-
-            <label>Role</label>
-            <select name="role">
-              <option value="admin" selected>Admin</option>
-              <option value="official">Official</option>
-            </select>
-
-            <button type="submit" class="create-btn">Create Account</button>
-          </form>
+          </div>
         </div>
       </section>
     </main>
   </div>
 
   <script>
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
+    document.getElementById('adminLogout').addEventListener('click', async () => {
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
       try {
@@ -159,7 +347,7 @@
         console.error('Logout error', err);
       }
 
-      window.location.replace('/loginadmin');
+      window.location.replace('/');
     });
 
     window.addEventListener('pageshow', (event) => {
@@ -168,7 +356,6 @@
       }
     });
 
-    // Form submission - POST to backend
     document.getElementById('createForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const msgError = document.getElementById('msgError');
@@ -189,40 +376,40 @@
         role: f.role.value || 'admin'
       };
 
-      if(!data.username || !data.email || !data.password){
+      if (!data.username || !data.email || !data.password) {
         msgError.textContent = 'Please fill required fields.';
         msgError.style.display = 'block';
         return;
       }
-      if(data.password !== data.password_confirmation){
+      if (data.password !== data.password_confirmation) {
         msgError.textContent = 'Passwords do not match.';
         msgError.style.display = 'block';
         return;
       }
 
-      try{
+      try {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Saving...';
 
-          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-          const res = await fetch('/api/officers/register', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'X-CSRF-TOKEN': csrfToken,
-              'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify(data)
-          });
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const res = await fetch('/api/officers/register', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify(data)
+        });
         let body = {};
         try {
           body = await res.json();
         } catch (e) {
           body = {};
         }
-        if(res.ok){
+        if (res.ok) {
           msgSuccess.textContent = 'Staff account created successfully!';
           msgSuccess.style.display = 'block';
           f.reset();
@@ -237,7 +424,7 @@
           msgError.textContent = errMsg;
           msgError.style.display = 'block';
         }
-      }catch(err){
+      } catch (err) {
         console.error('create admin err', err);
         msgError.textContent = 'Network error. Make sure backend is running.';
         msgError.style.display = 'block';
@@ -245,6 +432,33 @@
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create Account';
       }
+    });
+
+    const admMenuToggle = document.getElementById('admMenuToggle');
+    const admSidebarOverlay = document.getElementById('admSidebarOverlay');
+    const admNav = document.querySelector('.adm-nav');
+    function setMobileMenu(open) {
+      document.body.classList.toggle('adm-menu-open', !!open);
+      if (admMenuToggle) admMenuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    if (admMenuToggle) {
+      admMenuToggle.addEventListener('click', () => {
+        const willOpen = !document.body.classList.contains('adm-menu-open');
+        setMobileMenu(willOpen);
+      });
+    }
+    if (admSidebarOverlay) {
+      admSidebarOverlay.addEventListener('click', () => setMobileMenu(false));
+    }
+    if (admNav) {
+      admNav.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth <= 720) setMobileMenu(false);
+        });
+      });
+    }
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 720) setMobileMenu(false);
     });
   </script>
 </body>

@@ -8,10 +8,18 @@ use App\Models\Resident;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
+    public function logout(Request $request)
+    {
+        $request->user()?->currentAccessToken()?->delete();
+
+        return response()->json([
+            'message' => 'Logged out successfully.',
+        ]);
+    }
+
     public function login(Request $request)
     {
         $validated = $request->validate([
@@ -19,111 +27,75 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $loginValue = strtolower(trim((string) $validated['email']));
+        $email = strtolower(trim((string) $validated['email']));
 
-        $residentQuery = Resident::query();
-        $residentQuery->whereRaw('LOWER(email) = ?', [$loginValue]);
-        $resident = $residentQuery->first();
+        $user = User::query()
+            ->whereRaw('LOWER(email) = ?', [$email])
+            ->first();
 
-        if (!$resident) {
-            return response()->json([
-                'message' => 'Invalid resident credentials.'
-            ], 401);
+        if (! $user) {
+            $resident = Resident::query()
+                ->whereRaw('LOWER(email) = ?', [$email])
+                ->first();
+
+            if ($resident) {
+                $user = User::create([
+                    'name' => $resident->fullname,
+                    'username' => $email,
+                    'fullname' => $resident->fullname,
+                    'email' => $email,
+                    'password' => Hash::make($validated['password']),
+                    'age' => $resident->age,
+                    'contact' => $resident->contact,
+                    'address' => $resident->address,
+                    'role' => 'resident',
+                ]);
+            }
         }
 
-        $query = User::query();
-        $query->whereRaw('LOWER(email) = ?', [$loginValue]);
+        if ($user && strtolower((string) ($user->role ?? '')) !== 'resident') {
+            $user->role = 'resident';
+            $user->save();
+        }
 
-        $user = $query->first();
-        if (!$user && $resident) {
-            $residentEmail = strtolower(trim((string) ($resident->email ?? '')));
-
-            if ($residentEmail !== '') {
-                $user = User::whereRaw('LOWER(email) = ?', [$residentEmail])->first();
-            }
-
-            if ($user) {
-                if (strtolower((string) ($user->role ?? '')) !== 'resident') {
-                    $user->role = 'resident';
-                    $user->save();
-                }
-            }
-
-            if ($user) {
-                // Reuse existing user account that matches resident email.
-            } else {
-            $baseUsername = $resident->email
-                ? Str::before(strtolower((string) $resident->email), '@')
-                : Str::slug((string) $resident->fullname, '');
-
-            if ($baseUsername === '') {
-                $baseUsername = 'resident';
-            }
-
-            $username = $baseUsername;
-            $counter = 1;
-            while (User::where('username', $username)->exists()) {
-                $username = $baseUsername . $counter;
-                $counter++;
-            }
-
-            $email = $resident->email;
-            if (empty($email)) {
-                return response()->json([
-                    'message' => 'Resident record has no email. Please contact admin.'
-                ], 422);
-            }
-
-            $user = User::create([
-                'name' => $resident->fullname,
-                'username' => $username,
-                'fullname' => $resident->fullname,
-                'email' => $email,
-                'password' => Hash::make($validated['password']),
-                'age' => $resident->age,
-                'contact' => $resident->contact,
-                'address' => $resident->address,
-                'role' => 'resident',
+        if ($user && Hash::check($validated['password'], $user->password)) {
+            return response()->json([
+                'message' => 'Resident login successful',
+                'user' => [
+                    'id' => $user->id,
+                    'fullname' => $user->fullname,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                ],
             ]);
-            }
         }
 
-        if (!$user) {
-            return response()->json([
-                'message' => 'Invalid resident credentials.'
-            ], 401);
-        }
-
-        $isResidentRole = strtolower((string) ($user->role ?? '')) === 'resident';
-        if (!$isResidentRole) {
-            return response()->json([
-                'message' => 'Account is not registered as resident.'
-            ], 403);
-        }
-
-        $passwordOk = Hash::check($validated['password'], $user->password);
-        if (!$passwordOk && hash_equals((string) $user->password, (string) $validated['password'])) {
+        if ($user && hash_equals((string) $user->password, (string) $validated['password'])) {
             $user->password = Hash::make($validated['password']);
             $user->save();
-            $passwordOk = true;
+
+            return response()->json([
+                'message' => 'Resident login successful',
+                'user' => [
+                    'id' => $user->id,
+                    'fullname' => $user->fullname,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                ],
+            ]);
         }
 
-        if (!$passwordOk) {
+        if (! $user) {
             return response()->json([
                 'message' => 'Invalid resident credentials.'
             ], 401);
         }
 
         return response()->json([
-            'message' => 'Resident login successful',
-            'user' => [
-                'id' => $user->id,
-                'fullname' => $user->fullname,
-                'username' => $user->username,
-                'email' => $user->email,
-                'role' => $user->role,
-            ],
-        ]);
+            'message' => 'Invalid resident credentials.'
+        ], 401);
     }
 
     public function register(Request $request)

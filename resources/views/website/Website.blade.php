@@ -39,12 +39,12 @@
         <h2 id="adminLoginTitle">Officer</h2>
         <p>Login to access the officer dashboard</p>
       </div>
-      <div class="admin-login-body">
+          <div class="admin-login-body">
         <form action="{{ route('loginadmin.submit') }}" method="POST" id="adminLoginForm" novalidate>
           @csrf
           <div class="admin-field">
-            <label for="adminLogin">Email or Username</label>
-            <input id="adminLogin" name="login" type="text" placeholder="Enter your Email or Username" required />
+            <label for="adminEmail">Email</label>
+            <input id="adminEmail" name="email" type="email" placeholder="Enter your Email" required />
           </div>
           <div class="admin-field">
             <label for="adminPassword">Password</label>
@@ -89,12 +89,12 @@
     document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const form = e.currentTarget;
-      const login = String(document.getElementById('adminLogin').value || '').trim();
+      const email = String(document.getElementById('adminEmail').value || '').trim();
       const password = String(document.getElementById('adminPassword').value || '').trim();
       const csrf = form.querySelector('input[name="_token"]')?.value || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-      if(!login || !password){
-        alert('Please enter username/email and password.');
+      if(!email || !password){
+        alert('Please enter email and password.');
         return;
       }
 
@@ -106,7 +106,7 @@
           'X-CSRF-TOKEN': csrf,
           'X-Requested-With': 'XMLHttpRequest'
         },
-        body: JSON.stringify({ login, email: login, password })
+        body: JSON.stringify({ email, password })
       })
       .then(async (res) => {
         let body = {};

@@ -462,7 +462,7 @@
         <nav class="adm-nav" id="admSidebarNav" aria-label="Admin navigation">
           <a href="/dashs"><span class="ico">🏠</span><span>Dashboard</span></a>
           <a class="active" href="/certificate"><span class="ico">📄</span><span>Certificate Template</span></a>
-          <a href="/resident"><span class="ico">👥</span><span>Residents record</span></a>
+          <a href="/resident"><span class="ico">👥</span><span>Resident Records</span></a>
           <a href="/rest-acc"><span class="ico">🔐</span><span>Resident Accounts</span></a>
           @if ($isAdmin)
             <a href="/dashboard"><span class="ico">🧭</span><span>Admin Dashboard</span></a>
