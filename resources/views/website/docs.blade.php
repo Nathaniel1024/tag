@@ -15,19 +15,25 @@
     #toastContainer .toast .toast-icon{width:36px;height:36px;border-radius:8px;background:#10b981;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700}
     #toastContainer .toast .toast-text{font-weight:600;color:#064e3b}
     .dashboard-top{background:linear-gradient(90deg,#0b66c3 0%,#0a5fb8 100%);color:#fff;padding:.9rem 0;box-shadow:0 2px 8px rgba(2,6,23,0.08)}
-    .dashboard-top .container{display:flex;align-items:center;justify-content:space-between}
-    .user-info{display:flex;align-items:center;gap:.6rem}
+    .dashboard-top .container{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+    .dashboard-top .brand-block{display:flex;align-items:center;gap:1rem;min-width:0}
+    .dashboard-top .brand-copy{min-width:0}
+    .dashboard-top .brand-copy > div:first-child{font-weight:700;line-height:1.2}
+    .dashboard-top .brand-copy > div:last-child{font-size:.9rem;opacity:.9;line-height:1.35}
+    .user-info{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;justify-content:flex-end}
     .user-avatar{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.12);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:700;border:1px solid rgba(255,255,255,0.12)}
     .dashboard-top img{border-radius:50%;background:#fff;padding:4px}
     .logout-icon{width:38px;height:38px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:#fff;cursor:pointer}
     .logout-icon:hover{background:rgba(255,255,255,0.18)}
     .logout-icon svg{width:18px;height:18px;stroke:#fff}
-    .stats-row{display:flex;gap:1rem;margin:1rem 0}
+    .page-hero{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+    .page-actions{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+    .stats-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;margin:1rem 0}
     .stat-box{flex:1;background:#fff;border-radius:10px;padding:1.2rem;border:1px solid #eef4fb;text-align:center;box-shadow:0 4px 18px rgba(2,6,23,0.04)}
     .stat-box div:first-child{font-size:1.5rem;font-weight:800;color:#0b66c3}
     .apply-btn{background:#ffd400;color:#111;padding:.6rem .9rem;border-radius:8px;font-weight:700;box-shadow:0 6px 12px rgba(255,212,77,0.18);border:1px solid rgba(0,0,0,0.06)}
     /* controls */
-    .controls{display:flex;gap:.75rem;align-items:center;margin:1rem 0}
+    .controls{display:flex;gap:.75rem;align-items:center;margin:1rem 0;flex-wrap:wrap}
     .search-box{flex:1;display:flex;align-items:center;background:#fff;border:1px solid #eef2f7;padding:.4rem .6rem;border-radius:8px}
     .search-box input{border:0;outline:none;padding:.5rem .5rem;width:100%;font-size:.95rem}
     .filter-select{min-width:160px;padding:.5rem;border-radius:8px;border:1px solid #eef2f7;background:#fff}
@@ -36,8 +42,9 @@
     .action-btn:hover{background:#f8fafc}
     .actions-cell{display:flex;gap:.4rem;align-items:center}
     /* subtle card around table */
-    .table-card{background:#fff;border-radius:10px;padding:12px;border:1px solid #eef4fb}
+    .table-card{background:#fff;border-radius:10px;padding:12px;border:1px solid #eef4fb;overflow-x:auto}
     .requests-table{width:100%;border-collapse:collapse;margin-top:1rem;background:#fff;border-radius:8px;overflow:hidden}
+    .requests-table{min-width:860px}
     .requests-table thead th{background:#fbfdff;padding:10px 12px;border-bottom:1px solid #eef4fb;text-align:left;font-weight:700}
     .requests-table tbody td{padding:.75rem 12px;border-bottom:1px solid #f4f6f9}
     .requests-table tbody tr:last-child td{border-bottom:0}
@@ -70,16 +77,58 @@
       position:relative;
       z-index:1;
     }
+
+    @media (max-width: 1024px){
+      .dashboard-top .container{align-items:flex-start}
+      .stats-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+
+    @media (max-width: 768px){
+      .dashboard-top{padding:.8rem 0}
+      .dashboard-top .container{flex-direction:column;align-items:flex-start}
+      .dashboard-top .brand-block{width:100%}
+      .dashboard-top .brand-copy > div:last-child{font-size:.85rem}
+      .user-info{width:100%;justify-content:space-between}
+      .page-hero{align-items:flex-start}
+      .page-actions{width:100%}
+      .page-actions .apply-btn{width:100%}
+      .stats-row{grid-template-columns:1fr}
+      .search-box{min-width:0;width:100%}
+      .filter-select{width:100%}
+      .controls{gap:.6rem}
+      .table-card{padding:8px}
+      .requests-table{min-width:760px}
+      .modal{width:min(96vw,520px)}
+      .modal-body{max-height:75vh}
+      #viewFrame{height:62vh !important}
+    }
+
+    @media (max-width: 480px){
+      .container{width:92%}
+      .dashboard-top .brand-block{gap:.75rem}
+      .dashboard-top img{height:38px !important}
+      .user-avatar{width:38px;height:38px}
+      .logout-icon{width:34px;height:34px}
+      .page-hero h2{font-size:1.25rem}
+      .stat-box{padding:1rem}
+      .stat-box div:first-child{font-size:1.35rem}
+      .table-card{margin-left:-2px;margin-right:-2px}
+      .requests-table{min-width:700px}
+      .modal{padding:1rem}
+      .modal .modal-header{margin:-.75rem -1rem 0}
+      .modal-body{max-height:72vh}
+      #viewFrame{height:56vh !important}
+    }
   </style>
 </head>
 <body>
   <header class="dashboard-top">
     <div class="container">
-      <div style="display:flex;align-items:center;gap:1rem">
+      <div class="brand-block">
         <img src="{{ asset('img/logo_zed.png') }}" alt="logo" style="height:44px" />
-        <div>
-          <div style="font-weight:700">Resident Dashboard</div>
-          <div style="font-size:.9rem;opacity:.9">Apply for barangay clearance and track your requests</div>
+        <div class="brand-copy">
+          <div>Resident Dashboard</div>
+          <div>Apply for barangay clearance and track your requests</div>
         </div>
       </div>
       <div class="user-info" style="cursor:pointer;" id="profileInfo">
@@ -102,9 +151,11 @@
   <div id="toastContainer" style="position:fixed;top:16px;right:16px;z-index:120;pointer-events:none"></div>
 
   <main class="container" style="padding:1.25rem 0">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+    <div class="page-hero">
       <h2 id="welcomeResidentText">Welcome back, resident!</h2>
-      <button class="apply-btn">Apply for New Clearance</button>
+      <div class="page-actions">
+        <button class="apply-btn">Apply for New Clearance</button>
+      </div>
     </div>
 
     <div class="announcement-list" style="margin-top:1rem">
@@ -112,10 +163,10 @@
     </div>
 
     <div class="stats-row">
-      <div class="stat-box"> <div style="font-size:1.25rem;font-weight:700" id="statTotal">0</div><div style="color:var(--muted)">Total Requests</div></div>
-      <div class="stat-box"> <div style="font-size:1.25rem;font-weight:700" id="statPending">0</div><div style="color:var(--muted)">Pending</div></div>
-      <div class="stat-box"> <div style="font-size:1.25rem;font-weight:700" id="statApproved">0</div><div style="color:var(--muted)">Approved</div></div>
-      <div class="stat-box"> <div style="font-size:1.25rem;font-weight:700" id="statRejected">0</div><div style="color:var(--muted)">Rejected</div></div>
+      <div class="stat-box"> <div id="statTotal">0</div><div style="color:var(--muted)">Total Requests</div></div>
+      <div class="stat-box"> <div id="statPending">0</div><div style="color:var(--muted)">Pending</div></div>
+      <div class="stat-box"> <div id="statApproved">0</div><div style="color:var(--muted)">Approved</div></div>
+      <div class="stat-box"> <div id="statRejected">0</div><div style="color:var(--muted)">Rejected</div></div>
     </div>
 
     <section style="margin-top:1rem">
