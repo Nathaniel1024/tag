@@ -4,25 +4,35 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Resident extends Model
+class ResidentRegistrationRequest extends Model
 {
     protected $fillable = [
-        // 'user_id',
-        'fullname',
         'first_name',
         'middle_name',
         'last_name',
-        'profile_image',
-        'profile_image_mime',
+        'fullname',
+        'username',
         'email',
+        'password_hash',
         'contact',
         'age',
         'address',
+        'profile_image',
+        'profile_image_mime',
+        'status',
+        'reviewed_by',
+        'reviewed_at',
+        'decision_reason',
     ];
 
     protected $hidden = [
+        'password_hash',
         'profile_image',
         'profile_image_mime',
+    ];
+
+    protected $casts = [
+        'reviewed_at' => 'datetime',
     ];
 
     public function getFullnameAttribute($value): string
@@ -38,10 +48,5 @@ class Resident extends Model
         }
 
         return trim((string) ($value ?? ''));
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
     }
 }

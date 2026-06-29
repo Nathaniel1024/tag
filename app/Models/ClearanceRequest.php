@@ -28,11 +28,15 @@ class ClearanceRequest extends Model
         'id_file_path',
         'id_file_mime',
         'pdf_saved',
+        'saved_cert_type',
+        'saved_template',
+        'saved_paper_html',
     ];
 
     protected $casts = [
         'date_requested' => 'date',
         'valid_until' => 'date',
         'pdf_saved' => 'boolean',
+        'saved_template' => 'array',
     ];
 }

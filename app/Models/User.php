@@ -21,6 +21,11 @@ class User extends Authenticatable
         'username',
         'name',
         'fullname',
+        'first_name',
+        'middle_name',
+        'last_name',
+        'profile_image',
+        'profile_image_mime',
         'age',
         'contact',
         'address',
@@ -33,12 +38,29 @@ class User extends Authenticatable
         'updated_at',
     ];
 
+    public function getFullnameAttribute($value): string
+    {
+        $parts = array_filter([
+            trim((string) ($this->attributes['first_name'] ?? '')),
+            trim((string) ($this->attributes['middle_name'] ?? '')),
+            trim((string) ($this->attributes['last_name'] ?? '')),
+        ], static fn ($part) => $part !== '');
+
+        if (! empty($parts)) {
+            return implode(' ', $parts);
+        }
+
+        return trim((string) ($value ?? $this->attributes['name'] ?? ''));
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      */
     protected $hidden = [
         'password',
         'remember_token',
+        'profile_image',
+        'profile_image_mime',
     ];
 
     /**

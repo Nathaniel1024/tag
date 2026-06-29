@@ -182,21 +182,57 @@
       letter-spacing:.02em;
     }
 
+    .cert-back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .72rem 1rem;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      color: #111827;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 8px 18px rgba(2, 6, 23, .08);
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+
+    .cert-back-link:hover {
+      transform: translateY(-1px);
+      border-color: #9ca3af;
+      box-shadow: 0 12px 22px rgba(2, 6, 23, .11);
+    }
+
+    .cert-page .adm-layout {
+      display: block;
+    }
+
+    .cert-page .adm-sidebar,
+    .cert-page .adm-sidebar-overlay,
+    .cert-page .adm-menu-toggle {
+      display: none !important;
+    }
+
+    .cert-page .adm-main {
+      width: 100%;
+    }
+
     body.pdf-mode .paper{
       width:794px;
       min-height:1123px;
       max-width:none;
-      padding:56px 72px 92px;
+      padding:0 72px 92px;
+      box-sizing:border-box;
       box-shadow:none;
       border:0;
     }
 
     body.pdf-mode .paper .cert-header-image-wrap{
-      margin:2px auto 36px;
+      margin:0 auto 20px;
     }
 
     body.pdf-mode .paper .body{
-      margin-top:36px;
+      margin-top:18px;
       line-height:1.95;
     }
 
@@ -205,7 +241,7 @@
     }
 
     body.pdf-mode .paper .sig{
-      margin-top:76px;
+      margin-top:52px;
       margin-bottom:78px;
     }
 
@@ -408,20 +444,21 @@
       max-width:794px;
       min-width:794px;
       margin:0;
-      zoom:1.04;
+      box-sizing:border-box;
       transform-origin:top center;
       box-shadow:0 10px 24px rgba(2,6,23,.15);
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
     }
 
     @media (max-width:1200px){
       #pdfPreviewMount .paper {
-        zoom:1.05;
+        width:794px;
       }
     }
 
     @media (max-width:860px){
       #pdfPreviewMount .paper {
-        zoom:1;
         min-width:unset;
         width:100%;
         max-width:100%;
@@ -431,6 +468,108 @@
         width:794px;
         min-width:794px;
         max-width:none;
+      }
+    }
+
+    @media print {
+      @page {
+        size: A4;
+        margin: 0;
+      }
+
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      body:not(.pdf-mode) > *:not(#pdfPreviewModal) {
+        display: none !important;
+      }
+
+      body.pdf-mode > * {
+        display: none !important;
+      }
+
+      body.pdf-mode {
+        position: relative !important;
+      }
+
+      body.pdf-mode > #paper {
+        display: block !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        margin: 0 !important;
+        width: 794px !important;
+        min-width: 794px !important;
+        max-width: 794px !important;
+        height: 1123px !important;
+        min-height: 1123px !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+      }
+
+      #pdfPreviewModal {
+        display: block !important;
+        position: static !important;
+        inset: auto !important;
+        background: #fff !important;
+        overflow: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      #pdfPreviewModal .modal {
+        display: block !important;
+        width: 794px !important;
+        max-width: 794px !important;
+        max-height: none !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        background: #fff !important;
+      }
+
+      #pdfPreviewModal .modal-header {
+        display: none !important;
+      }
+
+      #pdfPreviewModal .modal-body {
+        padding: 0 !important;
+        background: #fff !important;
+        overflow: visible !important;
+      }
+
+      #pdfPreviewMount {
+        display: block !important;
+        padding: 0 !important;
+      }
+
+      #pdfPreviewMount .paper {
+        width: 794px !important;
+        min-width: 794px !important;
+        max-width: 794px !important;
+        height: 1123px !important;
+        min-height: 1123px !important;
+        box-sizing: border-box !important;
+        margin: 0 auto !important;
+        transform: none !important;
+        box-shadow: none !important;
+        border: 0 !important;
+        overflow: hidden !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+
+      #pdfPreviewMount .paper::before {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
     }
   </style>
@@ -447,7 +586,7 @@
     ];
   @endphp
   @php($isPdfMode = request('mode') === 'docs')
-  <body class="admin-dashboard{{ $isPdfMode ? ' pdf-mode' : '' }}">
+  <body class="admin-dashboard cert-page{{ $isPdfMode ? ' pdf-mode' : '' }}">
     @php($isAdmin = session('admin_role') === 'admin')
     <div class="adm-layout">
       <button class="adm-sidebar-overlay" id="admSidebarOverlay" type="button" aria-label="Close menu"></button>
@@ -476,9 +615,7 @@
 
       <main class="adm-main">
         <header class="adm-topbar">
-          <button class="adm-menu-toggle" id="admMenuToggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="admSidebarNav">
-            <span class="bars" aria-hidden="true"><span></span><span></span><span></span></span>
-          </button>
+          <a class="cert-back-link" href="/dashs" aria-label="Back to dashboard">← Back to Dashboard</a>
           <div class="role">
             <strong id="topbarUserName">{{ session('admin_name', 'CHAIRMAN') }}</strong>
             <span>{{ $isAdmin ? 'barangay Admin' : 'barangay Official' }}</span>
@@ -659,11 +796,11 @@
 </div>
 
 <div id="pdfPreviewModal" class="modal-overlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pdfPreviewTitle">
-    <div class="modal-header">
-      <h2 id="pdfPreviewTitle" style="margin:0">PDF Format Preview</h2>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pdfPreviewTitle">
+      <div class="modal-header">
+      <h2 id="pdfPreviewTitle" style="margin:0">Print / Save Preview</h2>
       <div style="display:flex;gap:.5rem;align-items:center;">
-        <button class="btn primary" type="button" id="pdfPrintBtn">Save PDF</button>
+        <button class="btn primary" type="button" id="pdfPrintBtn">Print / Save</button>
         <button class="btn" type="button" id="pdfPreviewCloseBtn">Close</button>
       </div>
     </div>
@@ -698,13 +835,14 @@
       const TEMPLATE_OVERRIDE_KEY = 'digibarangay_cert_template_override_v1';
       const LOGO_KEY = 'digibarangay_certificate_logo_dataurl_v2';
       const CERT_AUTOFILL_KEY = 'digibarangay_cert_autofill';
-  const REQUESTS_KEY = 'digibarangay_requests';
-  const NOTIF_SEEN_KEY = 'digibarangay_seen_request_refs_v1';
+      const REQUESTS_KEY = 'digibarangay_requests';
+      const NOTIF_SEEN_KEY = 'digibarangay_seen_request_refs_v1';
       // PDF template data with HTML markup for formatting
       const CERT_TEMPLATE_FILES = @json($pdfTemplateData);
       const URL_QUERY = new URLSearchParams(window.location.search);
       const IS_DOCS_VIEW = URL_QUERY.get('mode') === 'docs';
       const CHECKBOX_STATE_KEY = 'digibarangay_certificate_checkbox_state_v1';
+      const PLACEHOLDER_ID_IMAGE_DATAURL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO3ZV8QAAAAASUVORK5CYII=';
       const AUTO_HEADER_PRESET = {
         barangayName: 'BARANGAY 192',
         barangayAddress: 'City/Municipality, Province',
@@ -833,6 +971,66 @@
       function loadRequests() {
         const arr = safeJsonParse(localStorage.getItem(REQUESTS_KEY), []);
         return Array.isArray(arr) ? arr : [];
+      }
+
+      function saveRequests(nextRequests) {
+        localStorage.setItem(REQUESTS_KEY, JSON.stringify(Array.isArray(nextRequests) ? nextRequests : []));
+      }
+
+      function getAutofillRequest() {
+        const autofill = readCertificateAutofillData() || {};
+        const ref = String(autofill.ref || '').trim();
+        const email = String(autofill.email || '').trim().toLowerCase();
+        const name = String(autofill.name || '').trim().toLowerCase();
+        return loadRequests().find((request) => {
+          const requestRef = String(request?.ref || '').trim();
+          const requestEmail = String(request?.email || '').trim().toLowerCase();
+          const requestName = String(request?.name || '').trim().toLowerCase();
+          return (ref && requestRef === ref) || (email && (requestEmail === email || String(request?.ownerEmail || '').trim().toLowerCase() === email)) || (name && requestName === name);
+        }) || null;
+      }
+
+      function normalizeOwnerKey(value) {
+        return String(value || '')
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '') || 'certificate_print';
+      }
+
+      function dataUrlToFile(dataUrl, fileName, mimeType = 'image/png') {
+        const base64 = String(dataUrl || '').split(',')[1] || '';
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        return new File([bytes], fileName, { type: mimeType });
+      }
+
+      async function fetchImageFileFromUrl(url, fallbackName = 'id.png') {
+        if (!url) return null;
+        try {
+          const response = await fetch(url, { credentials: 'same-origin' });
+          if (!response.ok) return null;
+          const blob = await response.blob();
+          if (!blob || !blob.size) return null;
+          const mimeType = blob.type || 'image/png';
+          const extension = mimeType.includes('jpeg') ? 'jpg' : mimeType.includes('png') ? 'png' : 'img';
+          return new File([blob], fallbackName.replace(/\.[^.]+$/, '') + '.' + extension, { type: mimeType });
+        } catch (err) {
+          console.warn('Unable to reuse stored ID image for certificate print/save', err);
+          return null;
+        }
+      }
+
+      async function resolveCertificateIdFile() {
+        const autofillRequest = getAutofillRequest();
+        if (autofillRequest && autofillRequest.idFileUrl) {
+          const reused = await fetchImageFileFromUrl(autofillRequest.idFileUrl, autofillRequest.idFileName || 'id.png');
+          if (reused) return reused;
+        }
+        return dataUrlToFile(PLACEHOLDER_ID_IMAGE_DATAURL, 'certificate-placeholder-id.png', 'image/png');
       }
 
       function readSeenRefs() {
@@ -1950,6 +2148,98 @@
         }
       }
 
+      async function printCertificateFromDocsView(snapshotTemplate) {
+        try {
+          const autofill = readCertificateAutofillData() || {};
+          sessionStorage.setItem(CERT_AUTOFILL_KEY, JSON.stringify({
+            ref: String(autofill.ref || '').trim(),
+            name: String(autofill.name || '').trim(),
+            age: String(autofill.age ?? '').trim(),
+            address: String(autofill.address || '').trim(),
+            purpose: String(autofill.purpose || '').trim(),
+            date: String(autofill.date || '').trim(),
+            email: String(autofill.email || '').trim(),
+          }));
+          if (snapshotTemplate && typeof snapshotTemplate === 'object') {
+            sessionStorage.setItem(TEMPLATE_OVERRIDE_KEY, JSON.stringify(snapshotTemplate));
+          } else {
+            sessionStorage.removeItem(TEMPLATE_OVERRIDE_KEY);
+          }
+        } catch (err) {
+          console.warn('Unable to store certificate preview data', err);
+        }
+
+        const sourceFrame = document.createElement('iframe');
+        sourceFrame.setAttribute('aria-hidden', 'true');
+        sourceFrame.style.position = 'fixed';
+        sourceFrame.style.left = '0';
+        sourceFrame.style.top = '0';
+        sourceFrame.style.opacity = '0';
+        sourceFrame.style.pointerEvents = 'none';
+        sourceFrame.style.zIndex = '-1';
+        sourceFrame.style.width = '794px';
+        sourceFrame.style.height = '1123px';
+        sourceFrame.style.border = '0';
+        sourceFrame.src = '/certificate?mode=docs&t=' + Date.now();
+        document.body.appendChild(sourceFrame);
+
+        try {
+          await new Promise((resolve, reject) => {
+            const failTimer = setTimeout(() => reject(new Error('Timed out loading certificate preview.')), 20000);
+            sourceFrame.onload = () => {
+              clearTimeout(failTimer);
+              resolve();
+            };
+            sourceFrame.onerror = () => {
+              clearTimeout(failTimer);
+              reject(new Error('Unable to load certificate preview.'));
+            };
+          });
+
+          const sourceDoc = sourceFrame.contentDocument;
+          if (!sourceDoc) {
+            throw new Error('Certificate preview content not found.');
+          }
+
+          if (sourceDoc.fonts && sourceDoc.fonts.ready) {
+            try { await sourceDoc.fonts.ready; } catch (_) {}
+          }
+
+          const imageEls = Array.from(sourceDoc.images || []);
+          await Promise.all(imageEls.map((img) => {
+            if (img.complete) return Promise.resolve();
+            return new Promise((resolve) => {
+              img.addEventListener('load', resolve, { once: true });
+              img.addEventListener('error', resolve, { once: true });
+            });
+          }));
+
+          await new Promise((resolve) => setTimeout(resolve, 220));
+
+          const frameWindow = sourceFrame.contentWindow;
+          if (!frameWindow) {
+            throw new Error('Unable to open the certificate print preview.');
+          }
+
+          const printablePaper = sourceDoc.getElementById('paper');
+          if (!printablePaper) {
+            throw new Error('Certificate paper not found for printing.');
+          }
+
+          const paperClone = printablePaper.cloneNode(true);
+          paperClone.id = 'paper';
+
+          sourceDoc.body.className = 'pdf-mode';
+          sourceDoc.body.innerHTML = '';
+          sourceDoc.body.appendChild(paperClone);
+
+          frameWindow.focus();
+          frameWindow.print();
+        } finally {
+          setTimeout(() => sourceFrame.remove(), 1500);
+        }
+      }
+
       function openPdfPreview() {
         const sourcePaper = document.getElementById('paper');
         if (!sourcePaper || !pdfPreviewModal || !pdfPreviewMount) return;
@@ -2015,6 +2305,84 @@
         localStorage.setItem(REQUESTS_KEY, JSON.stringify(allRequests));
       }
 
+      async function saveCertificateApprovalRecord(snapshotTemplate, snapshotHtml) {
+        const autofill = readCertificateAutofillData() || {};
+        const currentRequest = getAutofillRequest();
+        const ref = 'BR' + Date.now() + Math.random().toString(36).slice(2, 7).toUpperCase();
+        const certificateType = String(snapshotTemplate?.certificateType || 'BARANGAY CERTIFICATE').trim();
+        const name = String(autofill.name || currentRequest?.name || '').trim() || 'Resident';
+        const emailCandidate = String(autofill.email || currentRequest?.email || currentRequest?.ownerEmail || document.getElementById('issueEmail')?.value || '').trim().toLowerCase();
+        const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailCandidate)
+          ? emailCandidate
+          : (ref.toLowerCase() + '@digibarangay.local');
+        const address = String(autofill.address || currentRequest?.address || '').trim() || 'N/A';
+        const age = String(autofill.age ?? currentRequest?.age ?? '').trim();
+        const contact = String(autofill.contact || currentRequest?.contact || document.getElementById('contactNo')?.value || '').trim();
+        const purpose = certificateType || String(autofill.purpose || currentRequest?.purpose || '').trim() || 'Certificate';
+        const purposeReason = String(autofill.purpose || currentRequest?.purposeReason || snapshotTemplate?.purposeStatement || snapshotTemplate?.mainBody || 'Certificate print/save request').trim();
+        const ownerKey = normalizeOwnerKey([
+          autofill.ref,
+          emailCandidate,
+          name,
+        ].filter(Boolean).join('-') || ref);
+
+        const idFile = await resolveCertificateIdFile();
+        const formData = new FormData();
+        formData.append('ref', ref);
+        formData.append('owner_key', ownerKey);
+        formData.append('owner_name', name);
+        formData.append('owner_email', email);
+        formData.append('name', name);
+        formData.append('email', email);
+        formData.append('address', address);
+        if (age) formData.append('age', age);
+        if (contact) formData.append('contact', contact);
+        formData.append('purpose', purpose);
+        formData.append('purpose_reason', purposeReason);
+        formData.append('pdf_saved', '1');
+        formData.append('saved_cert_type', certificateType);
+        formData.append('saved_template', JSON.stringify(snapshotTemplate && typeof snapshotTemplate === 'object' ? snapshotTemplate : {}));
+        formData.append('saved_paper_html', String(snapshotHtml || ''));
+        formData.append('idfile', idFile, idFile.name || 'certificate-placeholder-id.png');
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const response = await fetch('/clearance-requests', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          body: formData,
+        });
+
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(result.message || 'Unable to create the approval record.');
+        }
+
+        const savedRequest = result.request && typeof result.request === 'object' ? result.request : null;
+        if (savedRequest && savedRequest.ref) {
+          const allRequests = loadRequests();
+          const normalized = {
+            ...savedRequest,
+            pdfSaved: true,
+            savedCertType: certificateType,
+            savedTemplate: snapshotTemplate,
+            savedPaperHtml: String(snapshotHtml || ''),
+          };
+          const idx = allRequests.findIndex((item) => String(item?.ref || '').trim() === String(savedRequest.ref || '').trim());
+          if (idx >= 0) {
+            allRequests[idx] = { ...allRequests[idx], ...normalized };
+          } else {
+            allRequests.unshift(normalized);
+          }
+          saveRequests(allRequests);
+        }
+
+        return result.request || null;
+      }
+
       if (viewPdfBtn) viewPdfBtn.addEventListener('click', openPdfPreview);
       if (pdfPreviewCloseBtn) pdfPreviewCloseBtn.addEventListener('click', closePdfPreview);
       if (pdfPreviewModal) {
@@ -2033,35 +2401,13 @@
             const snapshotTemplate = readForm();
             const checkboxStateKey = getCheckboxStateKey(snapshotTemplate);
             snapshotTemplate.checkboxState = captureCheckboxState(source, checkboxStateKey);
-            renderPreview(snapshotTemplate);
-            const refFromAutofill = String(readCertificateAutofillData()?.ref || '').trim();
-            saveTemplate(snapshotTemplate);
-
-            if (!refFromAutofill) {
-              openStatusModal(
-                'Saved Template',
-                'Certificate format has been saved as template. To link it to Dashs/Resident/Docs request list, open a resident request first then click Save PDF again.'
-              );
-              return;
-            }
-
-            const pdfAttachmentBase64 = await generateCertificatePdfBase64(snapshotTemplate);
             const snapshotHtml = source.outerHTML;
-            const fileName = refFromAutofill + '.pdf';
-            updateRequestPdfSavedState(
-              refFromAutofill,
-              fileName,
-              snapshotTemplate,
-              snapshotHtml,
-              pdfAttachmentBase64 ? ('data:application/pdf;base64,' + pdfAttachmentBase64) : ''
-            );
-            openStatusModal(
-              'Saved',
-              'PDF format has been linked to this request. Dashs, Resident, and Docs can now view the saved certificate format.'
-            );
+            saveTemplate(snapshotTemplate);
+            await saveCertificateApprovalRecord(snapshotTemplate, snapshotHtml);
+            await printCertificateFromDocsView(snapshotTemplate);
           } catch (error) {
-            console.error('Save format error:', error);
-            openStatusModal('Save Failed', error?.message || 'Unable to save PDF format right now.');
+            console.error('Print preview error:', error);
+            openStatusModal('Print/Save Failed', error?.message || 'Unable to save the approval record and open print preview right now.');
           } finally {
             pdfPrintBtn.disabled = false;
           }

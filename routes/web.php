@@ -5,6 +5,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\OfficerController;
+use App\Http\Controllers\Api\ResidentController;
+use App\Http\Controllers\Api\ResidentRegistrationRequestController;
 use App\Http\Controllers\Website\WebsiteController;
 use App\Http\Controllers\Website\ClearanceRequestController;
 
@@ -59,6 +61,10 @@ Route::get('/cert', function () {
 Route::get('/resident', function () use ($adminViewResponse) {
     return $adminViewResponse('website.resident');
 });
+Route::get('/resident/report', [ClearanceRequestController::class, 'exportResidentReport']);
+Route::get('/resident-requests', function () use ($adminViewResponse) {
+    return redirect('/rest-acc');
+});
 Route::get('/rest-acc', function () use ($adminViewResponse) {
     return $adminViewResponse('website.rest-acc');
 });
@@ -105,6 +111,12 @@ Route::post('/password-change-requests/{id}/approve', [OfficerController::class,
 Route::post('/password-change-requests/{id}/reject', [OfficerController::class, 'rejectPasswordChangeRequest']);
 
 Route::post('/resident/login', [AuthController::class, 'login'])->name('resident.login');
+Route::get('/resident/profile', [ResidentController::class, 'profile']);
+Route::get('/resident-registration-requests', [ResidentRegistrationRequestController::class, 'index']);
+Route::get('/resident-registration-requests/{id}', [ResidentRegistrationRequestController::class, 'show']);
+Route::get('/resident-registration-requests/{id}/image', [ResidentRegistrationRequestController::class, 'image'])->name('resident-registration-requests.image');
+Route::post('/resident-registration-requests/{id}/approve', [ResidentRegistrationRequestController::class, 'approve']);
+Route::post('/resident-registration-requests/{id}/decline', [ResidentRegistrationRequestController::class, 'decline']);
 
 Route::post('/officers/{id}/request-password-change', [OfficerController::class, 'requestPasswordChange']);
 Route::post('/password-change-requests/{id}/approve', [OfficerController::class, 'approvePasswordChangeRequest']);

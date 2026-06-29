@@ -146,7 +146,7 @@
 			<button class="modal-close" id="registerModalClose" aria-label="Close">✕</button>
 			<div class="modal-header"><h2 id="registerTitle">Create Resident Account</h2></div>
 			<div class="modal-body">
-				<form id="registerModalForm" class="modal-form" novalidate>
+				<form id="registerModalForm" class="modal-form" novalidate enctype="multipart/form-data">
 					<fieldset>
 						<legend>Account Information</legend>
 						<label>Username (required)
@@ -165,8 +165,17 @@
 
 					<fieldset>
 						<legend>Personal Information</legend>
-						<label>Full name (required)
-							<input name="fullname" type="text" required />
+						<label>First name (required)
+							<input name="first_name" type="text" required />
+						</label>
+						<label>Middle name (optional)
+							<input name="middle_name" type="text" />
+						</label>
+						<label>Last name (required)
+							<input name="last_name" type="text" required />
+						</label>
+						<label>Profile image (optional)
+							<input name="profile_image" type="file" accept="image/*" />
 						</label>
 						<label>Contact number (optional, format: 09XX-XXXX-XXXX)
 							<input name="contact" type="tel" pattern="^09\d{2}-\d{4}-\d{4}$" placeholder="09XX-XXXX-XXXX" />

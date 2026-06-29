@@ -240,8 +240,14 @@
           id: loggedInUser.id || null,
           fullname: displayName,
           name: displayName,
+          first_name: loggedInUser.first_name || '',
+          middle_name: loggedInUser.middle_name || '',
+          last_name: loggedInUser.last_name || '',
           username: loggedInUser.username || '',
           email: displayEmail,
+          age: loggedInUser.age || '',
+          contact: loggedInUser.contact || '',
+          address: loggedInUser.address || '',
           role: loggedInUser.role || 'resident',
           user_key: String(
             loggedInUser.id

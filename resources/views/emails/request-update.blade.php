@@ -14,7 +14,7 @@
 
   <p>Hello {{ $payload['name'] ?? 'Resident' }},</p>
 
-  <p>{{ $payload['message'] ?? '' }}</p>
+  <p>{{ $payload['message'] ?? 'Your certificate is ready. Please claim it at the barangay office.' }}</p>
 
   <p>
     <strong>Reference:</strong> {{ $payload['ref'] ?? '' }}<br />

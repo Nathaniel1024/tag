@@ -4,8 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Mail\RequestEmailMail;
-use App\Http\Controllers\Website\WebsiteController;
-use Illuminate\Support\Str;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -108,58 +106,15 @@ class AdminController extends Controller
             'reason' => 'nullable|string|max:255',
             'date' => 'nullable|string|max:100',
             'template' => 'nullable|array',
-            'pdfAttachmentBase64' => 'nullable|string',
         ]);
 
         try {
-            $filename = 'certificate-' . Str::slug($validated['ref'] ?? uniqid()) . '.pdf';
             $mail = new RequestEmailMail($validated);
-            $attached = false;
-            $tmpPath = null;
-
-            // Prefer browser-generated PDF (live preview layout)
-            if (!empty($validated['pdfAttachmentBase64'])) {
-                $pdfData = preg_replace('#^data:application/[^;]+;base64,#', '', $validated['pdfAttachmentBase64']);
-                $pdfBytes = base64_decode($pdfData, true);
-                if ($pdfBytes !== false) {
-                    $mail->attachData($pdfBytes, $filename, [
-                        'mime' => 'application/pdf',
-                    ]);
-                    $attached = true;
-                }
-            }
-
-            // Fallback: generate PDF using server-side logic
-            if (! $attached) {
-                $pdfData = [
-                    'ref' => $validated['ref'] ?? '',
-                    'name' => $validated['name'] ?? '',
-                    'age' => $request->input('age', ''),
-                    'address' => $request->input('address', ''),
-                    'purpose' => $validated['purpose'] ?? '',
-                    'date' => $validated['date'] ?? '',
-                    'template' => $request->input('template', []),
-                ];
-                $websiteController = new WebsiteController();
-                $pdfContent = $websiteController->buildCertificatePdf($pdfData);
-                $tmpPath = storage_path('app/' . $filename);
-                file_put_contents($tmpPath, $pdfContent);
-
-                $mail->attach($tmpPath, [
-                    'as' => $filename,
-                    'mime' => 'application/pdf',
-                ]);
-            }
 
             Mail::to($validated['recipient'])->send($mail);
 
-            // Clean up temp file
-            if ($tmpPath && file_exists($tmpPath)) {
-                @unlink($tmpPath);
-            }
-
             return response()->json([
-                'message' => 'Email sent successfully with PDF attached.',
+                'message' => 'Email sent successfully.',
             ]);
         } catch (Throwable $e) {
             report($e);
