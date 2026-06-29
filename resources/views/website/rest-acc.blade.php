@@ -150,6 +150,23 @@
             pointer-events: none;
         }
 
+        #debugBar {
+            position: fixed;
+            left: 16px;
+            bottom: 16px;
+            z-index: 120;
+            max-width: min(92vw, 520px);
+            padding: .6rem .8rem;
+            border-radius: 10px;
+            background: rgba(17, 24, 39, .92);
+            color: #fff;
+            font-size: .82rem;
+            line-height: 1.4;
+            box-shadow: 0 12px 30px rgba(2, 6, 23, .22);
+            white-space: pre-wrap;
+            pointer-events: none;
+        }
+
         @media (max-width: 900px) {
 
             .stats-grid,
@@ -162,6 +179,7 @@
 
 <body class="admin-dashboard">
     <div id="toastHost" aria-live="polite" aria-atomic="true"></div>
+    <div id="debugBar" hidden></div>
     <div class="adm-layout">
         <button class="adm-sidebar-overlay" id="admSidebarOverlay" type="button" aria-label="Close menu"></button>
         <aside class="adm-sidebar">
@@ -350,10 +368,12 @@
         const pendingCount = document.getElementById('pendingCount');
         const approvedCount = document.getElementById('approvedCount');
         const declinedCount = document.getElementById('declinedCount');
+        const debugBar = document.getElementById('debugBar');
 
         let allRequests = [];
         let selectedRequest = null;
         let selectedResetRequest = null;
+        let lastRenderReason = 'initial';
 
         function normalize(value) {
             return String(value || '').trim().toLowerCase();
@@ -417,6 +437,12 @@
             }, duration);
         }
 
+        function setDebug(message) {
+            if (!debugBar) return;
+            debugBar.hidden = !message;
+            debugBar.textContent = message || '';
+        }
+
         function badge(status) {
             const s = normalize(status);
             if (s === 'approved') return '<span class="badge approved">Approved</span>';
@@ -443,6 +469,7 @@
         }
 
         async function loadRequests() {
+            setDebug('Loading resident requests...');
             const res = await fetch('/resident-registration-requests', {
                 headers: {
                     'Accept': 'application/json'
@@ -450,11 +477,15 @@
                 credentials: 'same-origin'
             });
 
-            if (!res.ok) throw new Error('Failed to load requests.');
+            if (!res.ok) {
+                setDebug('Load failed: HTTP ' + res.status);
+                throw new Error('Failed to load requests.');
+            }
 
             const body = await res.json();
             allRequests = Array.isArray(body.data) ? body.data : [];
             updateSummary();
+            setDebug('Loaded ' + allRequests.length + ' request(s).');
             renderRequests();
         }
 
@@ -469,11 +500,13 @@
             });
 
             if (!filtered.length) {
+                lastRenderReason = 'no results for q="' + q + '" status="' + statusFilter + '" total=' + allRequests.length;
                 rowsEl.innerHTML =
                     '<tr><td colspan="6" style="padding:1rem;color:#6b7280">No resident requests found.</td></tr>';
                 return;
             }
 
+            lastRenderReason = 'rendered ' + filtered.length + '/' + allRequests.length;
             rowsEl.innerHTML = filtered.map((item) => {
                 return '<tr>' +
                     '<td><div class="request-name">' + escapeHtml(item.fullname || '-') + '</div>' +
@@ -564,12 +597,14 @@
                     requestMeta.textContent = 'Loading request details...';
                     renderLoadingDetails();
                     showToast('Loading request details...', 'info');
+                    setDebug('Opening modal for id=' + id + ' with list size=' + allRequests.length);
 
                     item = await fetchRequestById(id);
                     if (!item) {
                         renderLoadingDetails('Request not found.');
                         requestMeta.textContent = 'Unable to load this request.';
                         showToast('Request not found.', 'error');
+                        setDebug('Request ' + id + ' was not returned by detail fetch.');
                         return;
                     }
                 }
@@ -587,6 +622,7 @@
 
                 requestModal.hidden = false;
                 requestModal.classList.add('open');
+                setDebug('Modal open for id=' + String(item.id) + ' status=' + String(item.status || '-'));
             } catch (error) {
                 console.error('Unable to open request modal', error);
                 requestModal.hidden = false;
@@ -595,6 +631,7 @@
                 requestMeta.textContent = 'Unable to load this request.';
                 renderLoadingDetails(error.message || 'Unable to load request details.');
                 showToast(error.message || 'Unable to load request details.', 'error');
+                setDebug('Modal error: ' + (error.message || 'unknown error'));
             }
         }
 
@@ -683,6 +720,7 @@
                 action === 'approve' ? 'Request approved.' : 'Request declined.',
                 'success'
             );
+            setDebug('Action "' + action + '" saved; refreshing list...');
             await loadRequests();
             closeModal();
         }
@@ -819,6 +857,7 @@
             rowsEl.innerHTML =
                 '<tr><td colspan="6" style="padding:1rem;color:#b91c1c">Failed to load requests.</td></tr>';
             showToast(error.message || 'Failed to load requests.', 'error');
+            setDebug('Initial load error: ' + (error.message || 'unknown error'));
         });
     </script>
 </body>
