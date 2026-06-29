@@ -465,7 +465,51 @@
             }
         }
 
-        function openModal(item) {
+        function renderLoadingDetails(message) {
+            requestDetails.innerHTML = '<div class="detail-item"><strong>Loading</strong><div>' +
+                escapeHtml(message || 'Loading request details...') + '</div></div>';
+            requestImage.src = '';
+            requestImage.hidden = true;
+            requestImageEmpty.hidden = false;
+        }
+
+        async function fetchRequestById(id) {
+            const res = await fetch('/resident-registration-requests/' + encodeURIComponent(id), {
+                headers: {
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            });
+
+            if (!res.ok) return null;
+
+            const body = await res.json().catch(() => ({}));
+            return body.data || null;
+        }
+
+        async function openModal(itemOrId) {
+            let item = itemOrId;
+            if (!item || typeof item !== 'object') {
+                const id = itemOrId;
+                if (id == null || id === '') {
+                    alert('Request not found.');
+                    return;
+                }
+
+                requestModal.hidden = false;
+                requestModal.classList.add('open');
+                requestTitle.textContent = 'Resident Account Request';
+                requestMeta.textContent = 'Loading request details...';
+                renderLoadingDetails();
+
+                item = await fetchRequestById(id);
+                if (!item) {
+                    renderLoadingDetails('Request not found.');
+                    requestMeta.textContent = 'Unable to load this request.';
+                    return;
+                }
+            }
+
             selectedRequest = item;
             requestTitle.textContent = item.fullname || 'Resident Account Request';
             requestMeta.textContent = 'Status: ' + String(item.status || 'pending').toUpperCase() + ' | Submitted: ' +
@@ -516,9 +560,9 @@
 
             const action = button.dataset.action || 'view';
             const item = allRequests.find((entry) => String(entry.id) === String(button.dataset.id));
-            if (!item) return;
 
             if (action === 'reset-password') {
+                if (!item) return;
                 if (normalize(item.status) !== 'approved') {
                     alert('Approve this account first before resetting the password.');
                     return;
@@ -527,7 +571,7 @@
                 return;
             }
 
-            openModal(item);
+            openModal(item || button.dataset.id);
         });
 
         requestClose.addEventListener('click', closeModal);
