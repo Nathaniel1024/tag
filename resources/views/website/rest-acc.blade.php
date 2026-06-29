@@ -423,7 +423,7 @@
                     '<td>' + badge(item.status) + '</td>' +
                     '<td>' + escapeHtml(item.created_at || '-') + '</td>' +
                     '<td><div class="actions" style="gap:.35rem;flex-wrap:wrap;">' +
-                    '<button class="btn-mini view" type="button" data-action="view" data-id="' + item.id + '">View</button>' +
+                    '<button class="btn-mini view" type="button" data-action="view" data-id="' + item.id + '" onclick="window.openResidentAccountRequestModal && window.openResidentAccountRequestModal(event, \'' + escapeHtml(String(item.id)) + '\')">View</button>' +
                     '<button class="btn-mini btn-reset" type="button" data-action="reset-password" data-id="' + item.id + '"' +
                     (normalize(item.status) === 'approved' ? '' : ' disabled') +
                     '>Reset Password</button>' +
@@ -525,6 +525,19 @@
             requestModal.classList.add('open');
         }
 
+        window.openResidentAccountRequestModal = async function(event, id) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (typeof event.stopImmediatePropagation === 'function') {
+                    event.stopImmediatePropagation();
+                }
+            }
+
+            const item = allRequests.find((entry) => String(entry.id) === String(id));
+            await openModal(item || id);
+        };
+
         function openResetPasswordModal(item) {
             if (!item) return;
             selectedResetRequest = item;
@@ -568,6 +581,11 @@
                     return;
                 }
                 openResetPasswordModal(item);
+                return;
+            }
+
+            if (typeof window.openResidentAccountRequestModal === 'function') {
+                window.openResidentAccountRequestModal(event, button.dataset.id);
                 return;
             }
 
