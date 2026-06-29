@@ -454,7 +454,6 @@
         }
 
         async function loadRequests() {
-            showToast('Loading resident requests...', 'info');
             const res = await fetch('/resident-registration-requests', {
                 headers: {
                     'Accept': 'application/json'
@@ -615,7 +614,7 @@
                 requestModal.hidden = false;
                 requestModal.classList.add('open');
 
-                const item = source || await fetchRequestById(id);
+                const item = await fetchRequestById(id);
                 if (!item) {
                     requestTitle.textContent = shell.fullname || 'Resident Account Request';
                     requestMeta.textContent = 'Showing cached details. Live details could not be loaded.';
@@ -623,6 +622,9 @@
                     await logClientIssue('warning', 'Modal opened with cached request only', {
                         request_id: String(id)
                     });
+                    // Keep modal open with shell details but disable actions
+                    declineBtn.disabled = true;
+                    approveBtn.disabled = true;
                     return;
                 }
 
