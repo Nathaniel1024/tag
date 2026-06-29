@@ -423,7 +423,7 @@
                     '<td>' + badge(item.status) + '</td>' +
                     '<td>' + escapeHtml(item.created_at || '-') + '</td>' +
                     '<td><div class="actions" style="gap:.35rem;flex-wrap:wrap;">' +
-                    '<button class="btn-mini view" type="button" data-action="view" data-id="' + item.id + '" onclick="window.openResidentAccountRequestModal && window.openResidentAccountRequestModal(event, \'' + escapeHtml(String(item.id)) + '\')">View</button>' +
+                    '<button class="btn-mini view" type="button" data-action="view" data-id="' + item.id + '">View</button>' +
                     '<button class="btn-mini btn-reset" type="button" data-action="reset-password" data-id="' + item.id + '"' +
                     (normalize(item.status) === 'approved' ? '' : ' disabled') +
                     '>Reset Password</button>' +
@@ -488,55 +488,51 @@
         }
 
         async function openModal(itemOrId) {
-            let item = itemOrId;
-            if (!item || typeof item !== 'object') {
-                const id = itemOrId;
-                if (id == null || id === '') {
-                    alert('Request not found.');
-                    return;
+            try {
+                let item = itemOrId;
+                if (!item || typeof item !== 'object') {
+                    const id = itemOrId;
+                    if (id == null || id === '') {
+                        alert('Request not found.');
+                        return;
+                    }
+
+                    requestModal.hidden = false;
+                    requestModal.classList.add('open');
+                    requestTitle.textContent = 'Resident Account Request';
+                    requestMeta.textContent = 'Loading request details...';
+                    renderLoadingDetails();
+
+                    item = await fetchRequestById(id);
+                    if (!item) {
+                        renderLoadingDetails('Request not found.');
+                        requestMeta.textContent = 'Unable to load this request.';
+                        return;
+                    }
                 }
+
+                selectedRequest = item;
+                requestTitle.textContent = item.fullname || 'Resident Account Request';
+                requestMeta.textContent = 'Status: ' + String(item.status || 'pending').toUpperCase() + ' | Submitted: ' +
+                    String(item.created_at || '-');
+                renderDetails(item);
+
+                const pending = normalize(item.status) === 'pending';
+                decisionReasonWrap.style.display = pending ? 'block' : 'none';
+                declineBtn.disabled = !pending;
+                approveBtn.disabled = !pending;
 
                 requestModal.hidden = false;
                 requestModal.classList.add('open');
+            } catch (error) {
+                console.error('Unable to open request modal', error);
+                requestModal.hidden = false;
+                requestModal.classList.add('open');
                 requestTitle.textContent = 'Resident Account Request';
-                requestMeta.textContent = 'Loading request details...';
-                renderLoadingDetails();
-
-                item = await fetchRequestById(id);
-                if (!item) {
-                    renderLoadingDetails('Request not found.');
-                    requestMeta.textContent = 'Unable to load this request.';
-                    return;
-                }
+                requestMeta.textContent = 'Unable to load this request.';
+                renderLoadingDetails(error.message || 'Unable to load request details.');
             }
-
-            selectedRequest = item;
-            requestTitle.textContent = item.fullname || 'Resident Account Request';
-            requestMeta.textContent = 'Status: ' + String(item.status || 'pending').toUpperCase() + ' | Submitted: ' +
-                String(item.created_at || '-');
-            renderDetails(item);
-
-            const pending = normalize(item.status) === 'pending';
-            decisionReasonWrap.style.display = pending ? 'block' : 'none';
-            declineBtn.disabled = !pending;
-            approveBtn.disabled = !pending;
-
-            requestModal.hidden = false;
-            requestModal.classList.add('open');
         }
-
-        window.openResidentAccountRequestModal = async function(event, id) {
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                if (typeof event.stopImmediatePropagation === 'function') {
-                    event.stopImmediatePropagation();
-                }
-            }
-
-            const item = allRequests.find((entry) => String(entry.id) === String(id));
-            await openModal(item || id);
-        };
 
         function openResetPasswordModal(item) {
             if (!item) return;
@@ -581,11 +577,6 @@
                     return;
                 }
                 openResetPasswordModal(item);
-                return;
-            }
-
-            if (typeof window.openResidentAccountRequestModal === 'function') {
-                window.openResidentAccountRequestModal(event, button.dataset.id);
                 return;
             }
 
