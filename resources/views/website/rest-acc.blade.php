@@ -139,34 +139,6 @@
             border-color: #115e59;
         }
 
-        #toastHost {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            z-index: 120;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            pointer-events: none;
-        }
-
-        #debugBar {
-            position: fixed;
-            left: 16px;
-            bottom: 16px;
-            z-index: 120;
-            max-width: min(92vw, 520px);
-            padding: .6rem .8rem;
-            border-radius: 10px;
-            background: rgba(17, 24, 39, .92);
-            color: #fff;
-            font-size: .82rem;
-            line-height: 1.4;
-            box-shadow: 0 12px 30px rgba(2, 6, 23, .22);
-            white-space: pre-wrap;
-            pointer-events: none;
-        }
-
         @media (max-width: 900px) {
 
             .stats-grid,
@@ -179,7 +151,6 @@
 
 <body class="admin-dashboard">
     <div id="toastHost" aria-live="polite" aria-atomic="true"></div>
-    <div id="debugBar" hidden></div>
     <div class="adm-layout">
         <button class="adm-sidebar-overlay" id="admSidebarOverlay" type="button" aria-label="Close menu"></button>
         <aside class="adm-sidebar">
@@ -368,12 +339,10 @@
         const pendingCount = document.getElementById('pendingCount');
         const approvedCount = document.getElementById('approvedCount');
         const declinedCount = document.getElementById('declinedCount');
-        const debugBar = document.getElementById('debugBar');
 
         let allRequests = [];
         let selectedRequest = null;
         let selectedResetRequest = null;
-        let lastRenderReason = 'initial';
 
         function normalize(value) {
             return String(value || '').trim().toLowerCase();
@@ -437,10 +406,26 @@
             }, duration);
         }
 
-        function setDebug(message) {
-            if (!debugBar) return;
-            debugBar.hidden = !message;
-            debugBar.textContent = message || '';
+        async function logClientIssue(level, message, context = {}) {
+            try {
+                await fetch('/resident-registration-requests/client-log', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': CSRF,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        level,
+                        message,
+                        context
+                    })
+                });
+            } catch (error) {
+                console.error('Unable to write client log', error);
+            }
         }
 
         function badge(status) {
@@ -469,7 +454,7 @@
         }
 
         async function loadRequests() {
-            setDebug('Loading resident requests...');
+            showToast('Loading resident requests...', 'info');
             const res = await fetch('/resident-registration-requests', {
                 headers: {
                     'Accept': 'application/json'
@@ -478,14 +463,15 @@
             });
 
             if (!res.ok) {
-                setDebug('Load failed: HTTP ' + res.status);
+                await logClientIssue('error', 'Load failed for resident requests', {
+                    http_status: res.status
+                });
                 throw new Error('Failed to load requests.');
             }
 
-            const body = await res.json();
+            const body = await res.json().catch(() => ({}));
             allRequests = Array.isArray(body.data) ? body.data : [];
             updateSummary();
-            setDebug('Loaded ' + allRequests.length + ' request(s).');
             renderRequests();
         }
 
@@ -500,13 +486,11 @@
             });
 
             if (!filtered.length) {
-                lastRenderReason = 'no results for q="' + q + '" status="' + statusFilter + '" total=' + allRequests.length;
                 rowsEl.innerHTML =
                     '<tr><td colspan="6" style="padding:1rem;color:#6b7280">No resident requests found.</td></tr>';
                 return;
             }
 
-            lastRenderReason = 'rendered ' + filtered.length + '/' + allRequests.length;
             rowsEl.innerHTML = filtered.map((item) => {
                 return '<tr>' +
                     '<td><div class="request-name">' + escapeHtml(item.fullname || '-') + '</div>' +
@@ -575,38 +559,71 @@
                 credentials: 'same-origin'
             });
 
-            if (!res.ok) return null;
+            if (!res.ok) {
+                await logClientIssue('warning', 'Detail fetch returned non-OK response', {
+                    request_id: String(id),
+                    http_status: res.status
+                });
+                return null;
+            }
 
             const body = await res.json().catch(() => ({}));
             return body.data || null;
         }
 
+        function buildShellRequest(id, source = {}) {
+            const normalizedId = String(id ?? source.id ?? '');
+            return {
+                id: normalizedId,
+                fullname: source.fullname || source.name || 'Resident Account Request',
+                first_name: source.first_name || '',
+                middle_name: source.middle_name || '',
+                last_name: source.last_name || '',
+                username: source.username || '',
+                email: source.email || '',
+                contact: source.contact || '',
+                age: source.age || '',
+                address: source.address || '',
+                status: source.status || 'pending',
+                reviewed_by: source.reviewed_by || '',
+                reviewed_at: source.reviewed_at || '',
+                decision_reason: source.decision_reason || '',
+                has_image: !!source.has_image,
+                image_url: source.image_url || '',
+                created_at: source.created_at || '',
+            };
+        }
+
         async function openModal(itemOrId) {
             try {
-                let item = itemOrId;
-                if (!item || typeof item !== 'object') {
-                    const id = itemOrId;
-                    if (id == null || id === '') {
-                        alert('Request not found.');
-                        return;
-                    }
+                const source = itemOrId && typeof itemOrId === 'object' ? itemOrId : null;
+                const id = source ? source.id : itemOrId;
+                if (id == null || id === '') {
+                    showToast('Request not found.', 'error');
+                    await logClientIssue('warning', 'Modal open skipped because no request id was provided', {});
+                    return;
+                }
 
-                    requestModal.hidden = false;
-                    requestModal.classList.add('open');
-                    requestTitle.textContent = 'Resident Account Request';
-                    requestMeta.textContent = 'Loading request details...';
-                    renderLoadingDetails();
-                    showToast('Loading request details...', 'info');
-                    setDebug('Opening modal for id=' + id + ' with list size=' + allRequests.length);
+                const shell = buildShellRequest(id, source || {});
+                selectedRequest = shell;
+                requestTitle.textContent = shell.fullname || 'Resident Account Request';
+                requestMeta.textContent = 'Loading request details...';
+                renderDetails(shell);
+                decisionReasonWrap.style.display = 'none';
+                declineBtn.disabled = true;
+                approveBtn.disabled = true;
+                requestModal.hidden = false;
+                requestModal.classList.add('open');
 
-                    item = await fetchRequestById(id);
-                    if (!item) {
-                        renderLoadingDetails('Request not found.');
-                        requestMeta.textContent = 'Unable to load this request.';
-                        showToast('Request not found.', 'error');
-                        setDebug('Request ' + id + ' was not returned by detail fetch.');
-                        return;
-                    }
+                const item = source || await fetchRequestById(id);
+                if (!item) {
+                    requestTitle.textContent = shell.fullname || 'Resident Account Request';
+                    requestMeta.textContent = 'Showing cached details. Live details could not be loaded.';
+                    showToast('Showing cached request details.', 'error');
+                    await logClientIssue('warning', 'Modal opened with cached request only', {
+                        request_id: String(id)
+                    });
+                    return;
                 }
 
                 selectedRequest = item;
@@ -622,16 +639,27 @@
 
                 requestModal.hidden = false;
                 requestModal.classList.add('open');
-                setDebug('Modal open for id=' + String(item.id) + ' status=' + String(item.status || '-'));
+                await logClientIssue('info', 'Modal opened for request', {
+                    request_id: String(item.id),
+                    request_status: String(item.status || 'pending')
+                });
             } catch (error) {
                 console.error('Unable to open request modal', error);
+                const fallback = buildShellRequest(itemOrId, {});
+                selectedRequest = fallback;
                 requestModal.hidden = false;
                 requestModal.classList.add('open');
-                requestTitle.textContent = 'Resident Account Request';
-                requestMeta.textContent = 'Unable to load this request.';
-                renderLoadingDetails(error.message || 'Unable to load request details.');
+                requestTitle.textContent = fallback.fullname || 'Resident Account Request';
+                requestMeta.textContent = 'Unable to fully load this request.';
+                renderDetails(fallback);
+                decisionReasonWrap.style.display = 'none';
+                declineBtn.disabled = true;
+                approveBtn.disabled = true;
                 showToast(error.message || 'Unable to load request details.', 'error');
-                setDebug('Modal error: ' + (error.message || 'unknown error'));
+                await logClientIssue('error', 'Modal open failed', {
+                    request_id: String(itemOrId && itemOrId.id ? itemOrId.id : itemOrId || ''),
+                    error: error.message || 'unknown error'
+                });
             }
         }
 
@@ -720,7 +748,6 @@
                 action === 'approve' ? 'Request approved.' : 'Request declined.',
                 'success'
             );
-            setDebug('Action "' + action + '" saved; refreshing list...');
             await loadRequests();
             closeModal();
         }
@@ -857,7 +884,9 @@
             rowsEl.innerHTML =
                 '<tr><td colspan="6" style="padding:1rem;color:#b91c1c">Failed to load requests.</td></tr>';
             showToast(error.message || 'Failed to load requests.', 'error');
-            setDebug('Initial load error: ' + (error.message || 'unknown error'));
+            logClientIssue('error', 'Initial resident requests load failed', {
+                error: error.message || 'unknown error'
+            });
         });
     </script>
 </body>

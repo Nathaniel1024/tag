@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class ResidentRegistrationRequestController extends Controller
 {
@@ -66,6 +67,12 @@ class ResidentRegistrationRequestController extends Controller
     public function index(Request $request)
     {
         if (! $this->adminAllowed($request)) {
+            Log::warning('Resident account requests index forbidden', [
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'admin_logged_in' => session('admin_logged_in'),
+                'admin_role' => session('admin_role'),
+            ]);
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -75,16 +82,46 @@ class ResidentRegistrationRequestController extends Controller
             ->map(fn ($item) => $this->requestPayload($item))
             ->values();
 
+        Log::info('Resident account requests loaded', [
+            'count' => $items->count(),
+            'admin_name' => session('admin_name'),
+            'admin_role' => session('admin_role'),
+        ]);
+
         return response()->json(['data' => $items]);
     }
 
     public function show(Request $request, $id)
     {
         if (! $this->adminAllowed($request)) {
+            Log::warning('Resident account request show forbidden', [
+                'request_id' => $id,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'admin_logged_in' => session('admin_logged_in'),
+                'admin_role' => session('admin_role'),
+            ]);
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $residentRegistrationRequest = ResidentRegistrationRequest::query()->findOrFail($id);
+        $residentRegistrationRequest = ResidentRegistrationRequest::query()->find($id);
+
+        if (! $residentRegistrationRequest) {
+            Log::warning('Resident account request not found', [
+                'request_id' => $id,
+                'admin_name' => session('admin_name'),
+                'admin_role' => session('admin_role'),
+            ]);
+
+            return response()->json(['message' => 'Request not found.'], 404);
+        }
+
+        Log::info('Resident account request details loaded', [
+            'request_id' => $id,
+            'status' => $residentRegistrationRequest->status,
+            'admin_name' => session('admin_name'),
+            'admin_role' => session('admin_role'),
+        ]);
 
         return response()->json([
             'data' => $this->requestPayload($residentRegistrationRequest),
@@ -111,10 +148,27 @@ class ResidentRegistrationRequestController extends Controller
     public function approve(Request $request, $id)
     {
         if (! $this->adminAllowed($request)) {
+            Log::warning('Resident account request approve forbidden', [
+                'request_id' => $id,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'admin_logged_in' => session('admin_logged_in'),
+                'admin_role' => session('admin_role'),
+            ]);
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $residentRegistrationRequest = ResidentRegistrationRequest::query()->findOrFail($id);
+        $residentRegistrationRequest = ResidentRegistrationRequest::query()->find($id);
+
+        if (! $residentRegistrationRequest) {
+            Log::warning('Resident account request approve missing record', [
+                'request_id' => $id,
+                'admin_name' => session('admin_name'),
+                'admin_role' => session('admin_role'),
+            ]);
+
+            return response()->json(['message' => 'Request not found.'], 404);
+        }
 
         $actor = (string) session('admin_name', 'Admin');
 
@@ -163,10 +217,27 @@ class ResidentRegistrationRequestController extends Controller
     public function decline(Request $request, $id)
     {
         if (! $this->adminAllowed($request)) {
+            Log::warning('Resident account request decline forbidden', [
+                'request_id' => $id,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'admin_logged_in' => session('admin_logged_in'),
+                'admin_role' => session('admin_role'),
+            ]);
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $residentRegistrationRequest = ResidentRegistrationRequest::query()->findOrFail($id);
+        $residentRegistrationRequest = ResidentRegistrationRequest::query()->find($id);
+
+        if (! $residentRegistrationRequest) {
+            Log::warning('Resident account request decline missing record', [
+                'request_id' => $id,
+                'admin_name' => session('admin_name'),
+                'admin_role' => session('admin_role'),
+            ]);
+
+            return response()->json(['message' => 'Request not found.'], 404);
+        }
 
         $validated = $request->validate([
             'reason' => 'nullable|string|max:500',
@@ -182,5 +253,36 @@ class ResidentRegistrationRequestController extends Controller
         return response()->json([
             'message' => 'Resident registration declined.',
         ]);
+    }
+
+    public function clientLog(Request $request)
+    {
+        if (! $this->adminAllowed($request)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $validated = $request->validate([
+            'level' => ['nullable', 'string', 'max:20'],
+            'message' => ['required', 'string', 'max:500'],
+            'context' => ['nullable', 'array'],
+        ]);
+
+        $level = strtolower(trim((string) ($validated['level'] ?? 'info')));
+        $context = array_merge($validated['context'] ?? [], [
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'admin_name' => session('admin_name'),
+            'admin_role' => session('admin_role'),
+        ]);
+
+        if ($level === 'error') {
+            Log::error('[Resident Accounts] ' . $validated['message'], $context);
+        } elseif ($level === 'warning') {
+            Log::warning('[Resident Accounts] ' . $validated['message'], $context);
+        } else {
+            Log::info('[Resident Accounts] ' . $validated['message'], $context);
+        }
+
+        return response()->json(['message' => 'Logged.']);
     }
 }

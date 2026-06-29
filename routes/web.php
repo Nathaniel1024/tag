@@ -117,6 +117,7 @@ Route::get('/resident-registration-requests/{id}', [ResidentRegistrationRequestC
 Route::get('/resident-registration-requests/{id}/image', [ResidentRegistrationRequestController::class, 'image'])->name('resident-registration-requests.image');
 Route::post('/resident-registration-requests/{id}/approve', [ResidentRegistrationRequestController::class, 'approve']);
 Route::post('/resident-registration-requests/{id}/decline', [ResidentRegistrationRequestController::class, 'decline']);
+Route::post('/resident-registration-requests/client-log', [ResidentRegistrationRequestController::class, 'clientLog']);
 
 Route::post('/officers/{id}/request-password-change', [OfficerController::class, 'requestPasswordChange']);
 Route::post('/password-change-requests/{id}/approve', [OfficerController::class, 'approvePasswordChangeRequest']);
