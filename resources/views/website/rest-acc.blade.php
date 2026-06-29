@@ -139,6 +139,17 @@
             border-color: #115e59;
         }
 
+        #toastHost {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 120;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
         @media (max-width: 900px) {
 
             .stats-grid,
@@ -150,6 +161,7 @@
 </head>
 
 <body class="admin-dashboard">
+    <div id="toastHost" aria-live="polite" aria-atomic="true"></div>
     <div class="adm-layout">
         <button class="adm-sidebar-overlay" id="admSidebarOverlay" type="button" aria-label="Close menu"></button>
         <aside class="adm-sidebar">
@@ -356,6 +368,55 @@
                 .replaceAll("'", '&#039;');
         }
 
+        function showToast(message, type = 'info') {
+            const host = document.getElementById('toastHost');
+            if (!host) return;
+
+            const toast = document.createElement('div');
+            const tone = type === 'error' ? {
+                background: '#fee2e2',
+                border: '#fecaca',
+                color: '#991b1b',
+            } : type === 'success' ? {
+                background: '#dcfce7',
+                border: '#bbf7d0',
+                color: '#166534',
+            } : {
+                background: '#111827',
+                border: '#1f2937',
+                color: '#fff',
+            };
+
+            toast.style.pointerEvents = 'none';
+            toast.style.minWidth = '240px';
+            toast.style.maxWidth = '360px';
+            toast.style.padding = '.75rem .9rem';
+            toast.style.borderRadius = '12px';
+            toast.style.boxShadow = '0 12px 30px rgba(2,6,23,.22)';
+            toast.style.fontSize = '.92rem';
+            toast.style.lineHeight = '1.35';
+            toast.style.background = tone.background;
+            toast.style.border = '1px solid ' + tone.border;
+            toast.style.color = tone.color;
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-8px)';
+            toast.style.transition = 'all .2s ease';
+            toast.textContent = message;
+            host.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            });
+
+            const duration = type === 'error' ? 3600 : 2200;
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-8px)';
+                setTimeout(() => toast.remove(), 240);
+            }, duration);
+        }
+
         function badge(status) {
             const s = normalize(status);
             if (s === 'approved') return '<span class="badge approved">Approved</span>';
@@ -502,11 +563,13 @@
                     requestTitle.textContent = 'Resident Account Request';
                     requestMeta.textContent = 'Loading request details...';
                     renderLoadingDetails();
+                    showToast('Loading request details...', 'info');
 
                     item = await fetchRequestById(id);
                     if (!item) {
                         renderLoadingDetails('Request not found.');
                         requestMeta.textContent = 'Unable to load this request.';
+                        showToast('Request not found.', 'error');
                         return;
                     }
                 }
@@ -531,6 +594,7 @@
                 requestTitle.textContent = 'Resident Account Request';
                 requestMeta.textContent = 'Unable to load this request.';
                 renderLoadingDetails(error.message || 'Unable to load request details.');
+                showToast(error.message || 'Unable to load request details.', 'error');
             }
         }
 
@@ -615,6 +679,10 @@
                 throw new Error(body.message || 'Action failed.');
             }
 
+            showToast(
+                action === 'approve' ? 'Request approved.' : 'Request declined.',
+                'success'
+            );
             await loadRequests();
             closeModal();
         }
@@ -663,7 +731,7 @@
                 }
 
                 closeResetPasswordModal();
-                alert(body.message || 'Password reset successfully.');
+                showToast(body.message || 'Password reset successfully.', 'success');
             } catch (error) {
                 resetPasswordError.textContent = error.message || 'Failed to reset password.';
                 resetPasswordError.style.display = 'block';
@@ -682,7 +750,7 @@
             try {
                 await postDecision('approve');
             } catch (error) {
-                alert(error.message || 'Unable to approve request.');
+                showToast(error.message || 'Unable to approve request.', 'error');
             }
         });
 
@@ -693,7 +761,7 @@
                     reason: reason || ''
                 });
             } catch (error) {
-                alert(error.message || 'Unable to decline request.');
+                showToast(error.message || 'Unable to decline request.', 'error');
             }
         });
 
@@ -750,6 +818,7 @@
             console.error(error);
             rowsEl.innerHTML =
                 '<tr><td colspan="6" style="padding:1rem;color:#b91c1c">Failed to load requests.</td></tr>';
+            showToast(error.message || 'Failed to load requests.', 'error');
         });
     </script>
 </body>
